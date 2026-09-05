@@ -1,0 +1,15 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# local Claude Code settings, not shared config
+.claude/settings.local.json
+
+# Office lock files
+~$*
+
+# OS cruft
+.DS_Store
+Thumbs.db
