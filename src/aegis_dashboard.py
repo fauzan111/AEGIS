@@ -66,6 +66,7 @@ df = load()
 st.sidebar.title("🛡️ AEGIS")
 st.sidebar.caption("Zero-Trust Identity for AI Agents on the Network")
 st.sidebar.markdown("**5G Academy 2026 · Team 4**")
+st.sidebar.markdown("[← Project overview & docs](https://fauzan111.github.io/AEGIS/)")
 st.sidebar.divider()
 
 stepup = st.sidebar.slider("STEP-UP threshold", 0.1, 0.95, 0.50, 0.05)
