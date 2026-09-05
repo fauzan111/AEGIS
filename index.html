@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AEGIS — Zero-Trust Identity for AI Agents on the Network</title>
+<meta name="description" content="A zero-trust behavioural gate for AI agents and automations on the 5G control plane. 5G Academy 2026, Team 4.">
+<style>
+  :root{
+    --bg:#060b18; --panel:#0c1526; --card:#111c33; --hair:#1c2b45;
+    --ink:#f2f6fb; --mute:#93a3bd; --accent:#22c3e6; --accent2:#3d67b1;
+    --green:#16b3a0; --amber:#e0a100; --red:#e15a72;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  header.hero{padding:90px 0 70px;text-align:center;
+    background:radial-gradient(ellipse at 50% -10%, rgba(34,195,230,.18), transparent 60%)}
+  .kicker{color:var(--accent);font-weight:700;letter-spacing:.08em;font-size:13px;text-transform:uppercase}
+  h1{font-size:56px;margin:14px 0 8px;font-weight:800;letter-spacing:-.02em}
+  .tagline{font-size:20px;color:var(--mute);max-width:640px;margin:0 auto 30px}
+  .pitch{font-size:16px;font-style:italic;color:#cfe3ee;margin-bottom:34px}
+  .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-block;padding:13px 26px;border-radius:10px;font-weight:700;
+    text-decoration:none;font-size:15px;transition:transform .15s ease}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.primary{background:var(--accent);color:#03131a}
+  .btn.ghost{border:1px solid var(--hair);color:var(--ink)}
+  section{padding:64px 0;border-top:1px solid var(--hair)}
+  h2{font-size:30px;margin:0 0 10px}
+  .lead{color:var(--mute);max-width:680px;margin-bottom:34px;font-size:16px}
+  .shot{width:100%;border-radius:14px;border:1px solid var(--hair);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  .grid{display:grid;gap:18px}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+  .grid.cols-4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:800px){.grid.cols-3,.grid.cols-4{grid-template-columns:1fr 1fr}}
+  @media(max-width:520px){.grid.cols-3,.grid.cols-4{grid-template-columns:1fr}h1{font-size:38px}}
+  .card{background:var(--card);border:1px solid var(--hair);border-radius:14px;padding:22px}
+  .card h3{margin:0 0 8px;font-size:16px;color:var(--accent)}
+  .card p{margin:0;color:var(--mute);font-size:14px}
+  .metric{background:var(--panel);border:1px solid var(--hair);border-radius:14px;
+    padding:26px 18px;text-align:center}
+  .metric .val{font-size:32px;font-weight:800;color:var(--accent)}
+  .metric .lab{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+  .pipeline{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:stretch}
+  .step{flex:1;min-width:190px;background:var(--card);border:1px solid var(--hair);
+    border-radius:14px;padding:20px}
+  .step .n{color:var(--accent2);font-weight:800;font-size:13px}
+  .step h3{margin:8px 0 6px;font-size:16px}
+  .step p{margin:0;color:var(--mute);font-size:13.5px}
+  .decision-row{display:flex;gap:14px;margin-top:18px;flex-wrap:wrap}
+  .decision{flex:1;min-width:200px;border-radius:12px;padding:16px 18px;border-left:4px solid}
+  .decision.pass{background:rgba(22,179,160,.1);border-color:var(--green)}
+  .decision.stepup{background:rgba(224,161,0,.1);border-color:var(--amber)}
+  .decision.block{background:rgba(225,90,114,.1);border-color:var(--red)}
+  .decision b{display:block;margin-bottom:2px}
+  .decision.pass b{color:var(--green)} .decision.stepup b{color:var(--amber)} .decision.block b{color:var(--red)}
+  .decision span{color:var(--mute);font-size:13.5px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--hair)}
+  th{color:var(--accent);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  td{color:#dbe4f1}
+  .team{color:var(--mute);font-size:14.5px}
+  .docs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  @media(max-width:600px){.docs-grid{grid-template-columns:1fr}}
+  .doclink{display:flex;justify-content:space-between;align-items:center;
+    background:var(--card);border:1px solid var(--hair);border-radius:12px;
+    padding:16px 18px;text-decoration:none;color:var(--ink)}
+  .doclink:hover{border-color:var(--accent)}
+  .doclink small{display:block;color:var(--mute);font-size:12.5px;margin-top:2px}
+  .caveat{background:var(--card);border:1px solid var(--hair);border-left:4px solid var(--amber);
+    border-radius:12px;padding:20px 22px;color:#dbe4f1;font-size:14.5px}
+  footer{padding:40px 0;text-align:center;color:var(--mute);font-size:13px;border-top:1px solid var(--hair)}
+  footer a{color:var(--accent);text-decoration:none}
+  img{max-width:100%}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">5G Academy 2026 · Fastweb + Vodafone · Topic 2, Security · Team 4</div>
+    <h1>AEGIS</h1>
+    <div class="tagline">A zero-trust behavioural gate for the AI agents and automations that operate the 5G network.</div>
+    <div class="pitch">"Credentials prove what you have, AEGIS verifies how you behave."</div>
+    <div class="cta">
+      <!-- TODO: replace href below with your real Streamlit Community Cloud URL once deployed -->
+      <a class="btn primary" id="dashboard-link" href="https://github.com/fauzan111/AEGIS/blob/main/src/aegis_dashboard.py" target="_blank" rel="noopener">View the Dashboard Code</a>
+      <a class="btn ghost" href="https://github.com/fauzan111/AEGIS" target="_blank" rel="noopener">View on GitHub</a>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">The Working Prototype</div>
+    <h2>See it decide, in real time</h2>
+    <p class="lead">Every request window from a machine agent is scored against that agent's own behavioural
+      fingerprint, then gated: PASS, STEP-UP, or BLOCK, always with a plain-language reason.</p>
+    <img class="shot" src="assets/dashboard.jpg" alt="AEGIS zero-trust gate dashboard, live view">
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">The Problem</div>
+    <h2>Authentication proves what you have. Not who you are.</h2>
+    <p class="lead">Orchestration tools, closed-loop automation, and AI copilots now call 5G Network Functions
+      directly. A stolen token or compromised automation still passes normal authentication, the credential is
+      valid, but the actor behind it isn't. AEGIS answers the question authentication never asks: is this really
+      our agent, behaving the way it always does?</p>
+    <div class="grid cols-3">
+      <div class="card"><h3>In scope</h3><p>Service and automation agents calling 5G control-plane APIs (the Service-Based Interface).</p></div>
+      <div class="card"><h3>Out of scope</h3><p>End-user devices, the data plane / user traffic, and general AI safety.</p></div>
+      <div class="card"><h3>Standard</h3><p>Built on NIST SP 800-207 zero-trust principles: never trust, always verify, verify continuously.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">How It Works</div>
+    <h2>Observe → Fingerprint → Score → Decide</h2>
+    <div class="pipeline">
+      <div class="step"><div class="n">01</div><h3>Observe</h3><p>Log every request: agent, target system, timing, size, status.</p></div>
+      <div class="step"><div class="n">02</div><h3>Fingerprint</h3><p>Compare the last 60s of activity to that agent's own known-good baseline.</p></div>
+      <div class="step"><div class="n">03</div><h3>Score</h3><p>Deterministic rules + an Isolation Forest (trained on legitimate traffic only) combine into one risk value.</p></div>
+      <div class="step"><div class="n">04</div><h3>Decide</h3><p>Fixed thresholds turn the risk score into a gate decision, automatically.</p></div>
+    </div>
+    <div class="decision-row">
+      <div class="decision pass"><b>PASS</b><span>Behaves like its known-good self</span></div>
+      <div class="decision stepup"><b>STEP-UP</b><span>Challenge: re-authenticate, approve, or throttle</span></div>
+      <div class="decision block"><b>BLOCK</b><span>Quarantine the identity, alert the SOC</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Threat Model</div>
+    <h2>Seven attacks, all built and detected</h2>
+    <p class="lead">We assume the attacker already holds a valid credential, the realistic, hard case, and catch
+      them by behaviour instead.</p>
+    <table>
+      <tr><th>ID</th><th>Threat</th><th>What it looks like</th></tr>
+      <tr><td>T1</td><td>Impersonation</td><td>Valid token, behaves like a different agent</td></tr>
+      <tr><td>T2</td><td>Compromised agent</td><td>A legitimate agent drifts into new behaviour</td></tr>
+      <tr><td>T3</td><td>Reconnaissance</td><td>Broad scanning across systems, high error rate</td></tr>
+      <tr><td>T4</td><td>Volumetric abuse</td><td>Request-rate spike far above normal</td></tr>
+      <tr><td>T5</td><td>Slow exfiltration</td><td>Quiet, large data pulls, off-hours</td></tr>
+      <tr><td>T6</td><td>Broken sequence</td><td>Closes a session that was never opened</td></tr>
+      <tr><td>T7</td><td>Scope creep</td><td>Touches systems outside its onboarded role</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Results</div>
+    <h2>Proof it works, on a held-out test set</h2>
+    <p class="lead">Measured on 11,343 request windows the model never saw during training, drawn from 210,000
+      simulated 5G control-plane requests across 5 agents and all 7 injected attack types.</p>
+    <div class="grid cols-4">
+      <div class="metric"><div class="val">0.99</div><div class="lab">ROC-AUC</div></div>
+      <div class="metric"><div class="val">98%</div><div class="lab">Recall</div></div>
+      <div class="metric"><div class="val">0.8%</div><div class="lab">False positives</div></div>
+      <div class="metric"><div class="val">7 / 7</div><div class="lab">Threats covered</div></div>
+    </div>
+    <br>
+    <img class="shot" src="assets/eval.png" alt="AEGIS evaluation results: risk separation and per-threat detection">
+    <br><br>
+    <div class="caveat">
+      <b>Honest caveat:</b> these results are measured on synthetic, ground-truth-labelled traffic we generated
+      ourselves. They prove the detection method works and is well-calibrated, not that it has been validated
+      against real network traffic yet, that's exactly the validation real or anonymised data from Fastweb and
+      Vodafone would give us.
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Project Schedule</div>
+    <h2>From proposal to a working PoC by 15 October</h2>
+    <img class="shot" src="assets/gantt.png" alt="AEGIS project Gantt chart">
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Read More</div>
+    <h2>Full documentation</h2>
+    <p class="lead">Everything here is explained end to end, part by part, in plain language, no prior 5G or
+      machine-learning background assumed.</p>
+    <div class="docs-grid">
+      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/docs/AEGIS_Prototype_Explained.docx" target="_blank" rel="noopener">
+        <div>AEGIS: How We Built The Prototype<small>Plain-language walkthrough of the whole system</small></div>
+      </a>
+      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/docs/AEGIS_Tech_Overview.docx" target="_blank" rel="noopener">
+        <div>Technical Overview<small>For Fastweb + Vodafone: data ask, integration ask</small></div>
+      </a>
+      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/slides/AEGIS_Gate1_Official.pptx" target="_blank" rel="noopener">
+        <div>Gate 1 Presentation<small>Technologies, schedule, feasibility, business case</small></div>
+      </a>
+      <a class="doclink" href="https://github.com/fauzan111/AEGIS" target="_blank" rel="noopener">
+        <div>Source Code<small>Generator, detector, and dashboard on GitHub</small></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Team 4</div>
+    <h2>5G Academy 2026</h2>
+    <p class="team">Fauzan Ejaz (Captain) · Adithya Zacharia Valavi · Ghazanfar Anees Siddiqui · Llagami Tedi</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    AEGIS · Zero-Trust Identity for AI Agents on the Network · 5G Academy 2026 ·
+    <a href="https://github.com/fauzan111/AEGIS" target="_blank" rel="noopener">github.com/fauzan111/AEGIS</a>
+  </div>
+</footer>
+
+</body>
+</html>
