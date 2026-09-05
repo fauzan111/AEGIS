@@ -1,5 +1,7 @@
 # AEGIS - Zero-Trust Identity for AI Agents on the Network
 
+# LIVE LINK- https://fauzan111.github.io/AEGIS/
+
 **5G Academy 2026 · Fastweb + Vodafone · Team 4**
 Topic 2 - Security on Network · Assigned by the Committee on 27 July 2026.
 
