@@ -22,19 +22,6 @@ against it - a **zero-trust gate for machine identities**.
 - **Real data (upgrade, if offered):** real M2M / API-gateway logs to model.
 - **Production vision:** the gate as an inline policy check at the edge (FASTedge).
 
-## Key milestones
-| Date | Milestone |
-|------|-----------|
-| 2 Sep 2026, 09:30 | Extra Fastweb+Vodafone dev meeting (prep for Gate 1) |
-| 7 Sep 2026 | **Gate 1** - proposal: technologies, Gantt, feasibility, business/economic analysis + report |
-| 22 Sep 2026 | **Gate 2** - technical solution + numerical performance analysis + expected PoC |
-| 15 Oct 2026 | **Gate 3** - working PoC + report |
-| 24 Sep / 5–25 Oct / 1 Nov | Storyboard / shooting / final video |
-
-## Two open questions for Fastweb
-1. Is there real M2M / API traffic we could model, or should we stay fully synthetic?
-2. Does FASTedge expose a hook for an inline policy check?
-
 ## Folder layout
 - `docs/`      - threat model, architecture, specs, meeting notes
 - `data/`      - synthetic datasets (generated) + any real samples
@@ -49,7 +36,7 @@ against it - a **zero-trust gate for machine identities**.
 - Scoring gate + dashboard (Streamlit) with PASS / STEP-UP / BLOCK
 - Open-source only for the PoC; FastwebAI / MIIA optional for a "why blocked" explainer
 
-## Status - working PoC baseline + Gate 1 pack (27 Jul 2026)
+## Working PoC baseline 
 End-to-end, reproducible pipeline on synthetic 5G SBA traffic:
 - `src/generate_synthetic_traffic.py` → `data/aegis_traffic.csv` - 210k requests,
   5 legit agents (with PDU-session lifecycle) + injected attacks T1–T7.
@@ -74,5 +61,5 @@ Detection: **all 7 threats T1–T7 covered** - T1/T2/T4/T5/T6/T7 ≈ 100%, T3 re
 (T6 closed via session-ID state machine; the earlier window-count heuristic was
 removed because it false-fired on legit traffic - see git history / threat model.)
 
-**Next (Gate 2, 22 Sep):** harden recon + temporal features, ROC operating-point
+**Next :** harden recon + temporal features, ROC operating-point
 analysis, integrate real logs if granted, more agent/attack variants.
