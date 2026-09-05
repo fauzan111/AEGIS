@@ -110,6 +110,7 @@ INDEX_TOPICS = [
     "The 5G Network, In Plain Terms",
     "The Agents We Modelled",
     "How We Built The Prototype",
+    "Technologies & Synthetic Data",
     "The Attacks We Simulated",
     "How AEGIS Decides",
     "Proof It Works",
@@ -120,7 +121,7 @@ for nm in [f"Segnaposto testo {i}" for i in range(1, 9)]:
     shp = by_name(s, nm)
     shp._element.getparent().remove(shp._element)
 # redraw all 8, evenly spaced, same right-hand column the template used
-top0, step, num_w, num_l, txt_l, txt_w = 1300000, 660000, 460000, 6130000, 6700000, 5900000
+top0, step, num_w, num_l, txt_l, txt_w = 1150000, 600000, 460000, 6130000, 6700000, 5900000
 for i, topic in enumerate(INDEX_TOPICS):
     y = top0 + i * step
     numbox = s.shapes.add_textbox(num_l, y, num_w, 520000)
@@ -363,7 +364,7 @@ def kicker(slide, text_):
 
 # ---- NEW: The 5G Network, In Plain Terms
 sl = new_slide()
-kicker(sl, "PART 2 OF 7 · PLAIN-LANGUAGE WALKTHROUGH")
+kicker(sl, "PART 2 OF 8 · PLAIN-LANGUAGE WALKTHROUGH")
 title(sl, "The 5G Network, In Plain Terms")
 txt(sl, 0.83, 1.25, 11.6, 0.5, [[
     ("A 5G network is a set of specialised systems, each handling one job, that "
@@ -388,7 +389,7 @@ for i, (code, name, desc) in enumerate(nfs):
 
 # ---- NEW: The Agents We Modelled
 sl = new_slide()
-kicker(sl, "PART 3 OF 7 · PLAIN-LANGUAGE WALKTHROUGH")
+kicker(sl, "PART 3 OF 8 · PLAIN-LANGUAGE WALKTHROUGH")
 title(sl, "The Agents We Modelled")
 txt(sl, 0.83, 1.25, 11.6, 0.5, [[
     ("Five automations, each with its own job, schedule and routine, so AEGIS "
@@ -410,7 +411,7 @@ for i, (name, desc) in enumerate(agents):
 
 # ---- NEW: How We Built The Prototype
 sl = new_slide()
-kicker(sl, "PART 4 OF 7 · PLAIN-LANGUAGE WALKTHROUGH")
+kicker(sl, "PART 4 OF 8 · PLAIN-LANGUAGE WALKTHROUGH")
 title(sl, "How We Built The Prototype")
 steps = [
     ("1. Traffic simulator (not AI)", "A program we wrote ourselves that plays out a virtual week of "
@@ -430,9 +431,45 @@ for i, (h, d) in enumerate(steps):
     txt(sl, 1.15, y + 0.16, 10.8, 0.35, [[(h, 14, NAVY, True)]])
     txt(sl, 1.15, y + 0.58, 10.8, 0.9, [[(d, 11.5, BODY_C, False)]], line_spacing=1.2)
 
+# ---- NEW: Technologies & Synthetic Data
+sl = new_slide()
+kicker(sl, "PART 5 OF 8 · PLAIN-LANGUAGE WALKTHROUGH")
+title(sl, "Technologies & Synthetic Data")
+txt(sl, 0.83, 1.25, 11.6, 0.5, [[
+    ("What we actually built with, and how we built the traffic the "
+     "prototype learns from and is tested against.", 12.5, MUTE_C, False)]])
+txt(sl, 0.83, 1.85, 5.6, 0.35, [[("TECHNOLOGY STACK", 12.5, ACCENT2, True)]])
+tools = [
+    ("Python", "The language everything is written in - free, open-source, industry-standard."),
+    ("pandas / numpy", "Handle the 210,000 simulated requests as structured, queryable data."),
+    ("scikit-learn", "Standard ML library - this is where the Isolation Forest model comes from."),
+    ("Streamlit", "Turns the Python detector into the live, interactive gate dashboard."),
+]
+ty, th_ = 2.25, 0.72
+for i, (name, desc) in enumerate(tools):
+    y = ty + i * (th_ + 0.1)
+    rect(sl, 0.83, y, 5.6, th_, fill=CARD_C, line=HAIR_C, radius=0.1)
+    rect(sl, 0.83, y, 0.08, th_, fill=ACCENT2)
+    txt(sl, 1.1, y + 0.09, 5.1, 0.3, [[(name, 12.5, NAVY, True)]])
+    txt(sl, 1.1, y + 0.38, 5.1, 0.3, [[(desc, 10, BODY_C, False)]])
+txt(sl, 6.75, 1.85, 5.7, 0.35, [[("HOW THE SYNTHETIC DATA WAS BUILT", 12.5, ACCENT, True)]])
+data_steps = [
+    "6 Network Functions modelled (AMF, SMF, NRF, PCF, UDM, NEF), each with realistic SBI endpoints.",
+    "5 agent profiles, each with its own scope, schedule, and call sequence, played out over a simulated week (~210k requests).",
+    "7 attack types (T1-T7) injected on top of that legitimate traffic, each one ground-truth labelled for evaluation.",
+    "Everything is free and open-source; real M2M/API-gateway logs are pluggable later if Fastweb/Vodafone can share them.",
+]
+bullets_y = 2.25
+runs = [[("-  ", 11.5, ACCENT, True), (it, 11.5, BODY_C, False)] for it in data_steps]
+txt(sl, 6.75, bullets_y, 5.7, 4.0, runs, line_spacing=1.25)
+rect(sl, 0.83, 6.35, 11.6, 0.75, fill=PANEL_C, radius=0.1)
+txt(sl, 1.1, 6.5, 11.0, 0.5, [[
+    ("The data generator is a scripted simulation, not AI. The Isolation Forest is the "
+     "only place machine learning is actually used, on the detection side.", 11, NAVY, True)]])
+
 # ---- NEW: The Attacks We Simulated
 sl = new_slide()
-kicker(sl, "PART 5 OF 7 · PLAIN-LANGUAGE WALKTHROUGH")
+kicker(sl, "PART 6 OF 8 · PLAIN-LANGUAGE WALKTHROUGH")
 title(sl, "The Attacks We Simulated")
 txt(sl, 0.83, 1.25, 11.6, 0.5, [[
     ("We assume the attacker already has a valid credential. What changes is the "
@@ -458,7 +495,7 @@ for i, (tid, name, desc) in enumerate(threats):
 
 # ---- NEW: How AEGIS Decides
 sl = new_slide()
-kicker(sl, "PART 6 OF 7 · PLAIN-LANGUAGE WALKTHROUGH")
+kicker(sl, "PART 7 OF 8 · PLAIN-LANGUAGE WALKTHROUGH")
 title(sl, "How AEGIS Decides")
 pipe = [
     ("OBSERVE", "Log every request: agent, target, timing, size, status."),
@@ -488,7 +525,7 @@ txt(sl, 0.83, 5.6, 11.6, 0.6, [[
 
 # ---- NEW: Proof It Works
 sl = new_slide()
-kicker(sl, "PART 7 OF 7 · PLAIN-LANGUAGE WALKTHROUGH")
+kicker(sl, "PART 8 OF 8 · PLAIN-LANGUAGE WALKTHROUGH")
 title(sl, "Proof It Works")
 metrics = [("ROC-AUC", "0.99"), ("Recall", "98%"), ("False positives", "0.8%"), ("Threats covered", "7 / 7")]
 for i, (lab, val) in enumerate(metrics):
@@ -507,10 +544,10 @@ txt(sl, 1.1, 5.05, 11.0, 0.55, [[
      "not that it holds up on real network traffic yet - that validation is exactly "
      "what real or anonymised data from Fastweb + Vodafone would give us.", 11.5, RGBColor(0xE6, 0xEC, 0xF2), False)]])
 
-# ---------- reorder: move the 6 new slides to right after slide 3 (index 2) ----------
+# ---------- reorder: move the 7 new slides to right after slide 3 (index 2) ----------
 sldIdLst = prs.slides._sldIdLst
 all_ids = list(sldIdLst)
-new_ids = all_ids[-6:]                # the 6 slides just appended
+new_ids = all_ids[-7:]                # the 7 slides just appended
 for el in new_ids:
     sldIdLst.remove(el)
 for i, el in enumerate(new_ids):
