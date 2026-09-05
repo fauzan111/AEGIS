@@ -227,7 +227,7 @@ def main():
 
     # ---- report ----
     lines = []
-    lines.append("# AEGIS — Baseline Detection Results\n")
+    lines.append("# AEGIS - Baseline Detection Results\n")
     lines.append(f"- Windows evaluated: **{len(test):,}** "
                  f"(legit {int((y==0).sum()):,} · attack {int((y==1).sum()):,})")
     lines.append(f"- Window size: {WINDOW} · decision thresholds: STEP-UP ≥ {STEPUP}, BLOCK ≥ {BLOCK}\n")
@@ -238,7 +238,7 @@ def main():
     lines.append(f"| Recall (detection) | **{rec:.3f}** |")
     lines.append(f"| F1 | {f1:.3f} |")
     lines.append(f"| False-positive rate (legit flagged) | **{fpr:.4f}** |")
-    lines.append(f"| ROC-AUC — ML only (no rules) | {auc_ml:.3f} |\n")
+    lines.append(f"| ROC-AUC - ML only (no rules) | {auc_ml:.3f} |\n")
     lines.append("_All seven threats T1–T7 now have a working detector. T6 uses a "
                  "session-level state machine (orphan update/release detection), which "
                  "replaced the earlier window-count heuristic that false-fired on legit traffic._\n")
@@ -272,7 +272,7 @@ def make_figure(test, per):
 
     INKC, LEGITC, ATKC, ACC = "#1F2A37", "#3B82C4", "#D1495B", "#0E9384"
     fig, ax = plt.subplots(1, 2, figsize=(11, 4.2))
-    fig.suptitle("AEGIS — zero-trust gate: detection on synthetic 5G SBA traffic",
+    fig.suptitle("AEGIS - zero-trust gate: detection on synthetic 5G SBA traffic",
                  fontsize=13, fontweight="bold", color=INKC, x=0.5, y=0.99)
 
     # (1) risk distribution: legit vs attack
@@ -285,7 +285,7 @@ def make_figure(test, per):
     a.axvline(STEPUP, color="#6B7280", ls="--", lw=1); a.axvline(BLOCK, color=INKC, ls="--", lw=1)
     a.text(STEPUP, 1.5, " STEP-UP", fontsize=8, color="#6B7280")
     a.text(BLOCK, 1.5, " BLOCK", fontsize=8, color=INKC)
-    a.set_title("Risk score — legit vs attack", fontsize=11, color=INKC)
+    a.set_title("Risk score - legit vs attack", fontsize=11, color=INKC)
     a.set_xlabel("risk"); a.set_ylabel("windows (log)"); a.legend(frameon=False, fontsize=9)
     for sp in ["top", "right"]:
         a.spines[sp].set_visible(False)

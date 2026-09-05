@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-AEGIS — Gate 1 proposal deck (+ Gantt chart) for the 5G Academy 2026.
+AEGIS - Gate 1 proposal deck (+ Gantt chart) for the 5G Academy 2026.
 Covers what Gate 1 grades: problem/threat model, architecture, technology,
 working PoC results, project schedule (Gantt), feasibility and business case.
 
@@ -59,7 +59,7 @@ def build_gantt():
         ("Gate 1 proposal & business case", "2026-08-05", "2026-09-07", INDIGO, ""),
         ("Detector hardening (recon, temporal)", "2026-08-15", "2026-09-20", INDIGO, ""),
         ("Real-data integration (if granted)", "2026-09-02", "2026-09-25", AMBER, "opt"),
-        ("Gate 2 — numerical performance analysis", "2026-09-08", "2026-09-22", INDIGO, ""),
+        ("Gate 2 - numerical performance analysis", "2026-09-08", "2026-09-22", INDIGO, ""),
         ("Zero-trust gate dashboard & demo", "2026-09-10", "2026-10-12", INDIGO, ""),
         ("PoC integration & evaluation", "2026-09-22", "2026-10-15", INDIGO, ""),
         ("Storyboard & video", "2026-09-24", "2026-11-01", MUTE, "par"),
@@ -90,7 +90,7 @@ def build_gantt():
     plt.setp(ax.get_xticklabels(), fontsize=8, rotation=0)
     for sp in ["top", "right", "left"]:
         ax.spines[sp].set_visible(False)
-    ax.set_title("AEGIS — project schedule (27 Jul → 15 Oct 2026)", fontsize=13,
+    ax.set_title("AEGIS - project schedule (27 Jul → 15 Oct 2026)", fontsize=13,
                  fontweight="bold", color=HEX_INK, loc="left")
     ax.grid(axis="x", color="#EEF1F6", lw=0.8)
     ax.set_axisbelow(True)
@@ -162,7 +162,7 @@ def foot(s, n):
 
 
 def bullets(s, x, y, w, h, items, accent, size=11.5, gap=6):
-    runs = [[("—  ", size, accent, True, False), (it, size, BODY, False, False)] for it in items]
+    runs = [[("-  ", size, accent, True, False), (it, size, BODY, False, False)] for it in items]
     text(s, x, y, w, h, runs, line_spacing=1.14, space_after=gap)
 
 
@@ -182,14 +182,14 @@ def nxt():
 s = nxt()
 rect(s, 0, 0, 13.333, 7.5, fill=INK)
 rect(s, 0, 0, 13.333, 0.16, fill=INDIGO)
-text(s, 0.9, 1.5, 11.5, 0.4, [[("5G ACADEMY 2026  ·  FASTWEB + VODAFONE  ·  TOPIC 2 — SECURITY", 12, tint(INDIGO, 0.4), True, False)]])
+text(s, 0.9, 1.5, 11.5, 0.4, [[("5G ACADEMY 2026  ·  FASTWEB + VODAFONE  ·  TOPIC 2 - SECURITY", 12, tint(INDIGO, 0.4), True, False)]])
 text(s, 0.9, 2.15, 11.5, 1.0, [[("AEGIS", 66, WHITE, True, False)]])
 text(s, 0.92, 3.35, 11.5, 0.5, [[("Zero-Trust Identity for AI Agents on the Network", 22, tint(INDIGO, 0.55), False, False)]])
-text(s, 0.92, 4.15, 11.5, 0.4, [[("Credentials prove what you have — AEGIS verifies how you behave.", 14, RGBColor(0xC7,0xCE,0xDB), False, True, FONT_L)]])
+text(s, 0.92, 4.15, 11.5, 0.4, [[("Credentials prove what you have - AEGIS verifies how you behave.", 14, RGBColor(0xC7,0xCE,0xDB), False, True, FONT_L)]])
 rect(s, 0.94, 4.95, 0.8, 0.04, fill=RED)
-text(s, 0.92, 5.2, 11.5, 0.35, [[("Gate 1 — Project Proposal  ·  prepared for the 2 September dev meeting", 13, WHITE, True, False)]])
+text(s, 0.92, 5.2, 11.5, 0.35, [[("Gate 1 - Project Proposal  ·  prepared for the 2 September dev meeting", 13, WHITE, True, False)]])
 text(s, 0.92, 5.75, 11.5, 0.6,
-     [[("Team 4 — ", 12, tint(INDIGO,0.5), True, False),
+     [[("Team 4 - ", 12, tint(INDIGO,0.5), True, False),
        ("Fauzan Ejaz (Captain) · Adithya Zacharia Valavi · Ghazanfar Anees Siddiqui · Llagami Tedi", 12, RGBColor(0xC7,0xCE,0xDB), False, False)]])
 
 # ---- 2 plain-english glossary (5 terms you'll hear today)
@@ -223,19 +223,19 @@ foot(s, 2)
 # ---- 3 problem / why now
 s = nxt()
 head(s, "THE PROBLEM · WHY NOW", "Machine agents now command the network",
-     "As networks become AI-native, automations — not humans — call the control plane.")
+     "As networks become AI-native, automations - not humans - call the control plane.")
 col_w = 3.94
 prob = [
     ("The shift", INDIGO, ["Orchestration, closed-loop automation, OSS jobs and LLM copilots",
                            "call 5G Network Functions over the Service-Based Interface (SBI)",
-                           "— the same control APIs a human operator's tooling uses."]),
-    ("The gap", RED, ["A stolen token or a compromised automation account passes AAA —",
+                           "- the same control APIs a human operator's tooling uses."]),
+    ("The gap", RED, ["A stolen token or a compromised automation account passes AAA -",
                       "the credential is valid, but the actor behind it is not.",
                       "Authentication asks “is the credential valid?”, never “is this really"
                       " our agent, behaving as it always does?”"]),
     ("The answer", GREEN, ["Zero-trust for machine identities (NIST SP 800-207):",
                            "learn each agent's behavioural fingerprint and verify every",
-                           "request against it — continuously. Never trust, always verify."]),
+                           "request against it - continuously. Never trust, always verify."]),
 ]
 for i, (t, c, items) in enumerate(prob):
     x = 0.62 + i * (col_w + 0.22)
@@ -247,13 +247,13 @@ rect(s, 0.62, 5.65, 12.11, 0.95, fill=tint(INDIGO, 0.9), shape=MSO_SHAPE.ROUNDED
 rect(s, 0.62, 5.65, 0.09, 0.95, fill=INDIGO)
 text(s, 0.95, 5.86, 11.6, 0.5,
      [[("In scope: ", 12.5, INDIGO, True, False),
-       ("orchestration / API agents on network control services — a control-plane security "
+       ("orchestration / API agents on network control services - a control-plane security "
         "problem that exists today, not a general “AI safety” concept.", 12.5, INK, False, False)]], line_spacing=1.1)
 foot(s, 3)
 
 # ---- 3 threat model
 s = nxt()
-head(s, "THREAT MODEL", "Seven threats — all built and detected",
+head(s, "THREAT MODEL", "Seven threats - all built and detected",
      "We assume the attacker already holds a valid credential. AEGIS catches them by behaviour.")
 threats = [
     ("T1", "Impersonation", "valid token, wrong role", "endpoint mix / timing mismatch"),
@@ -274,11 +274,11 @@ for i, (tid, name, what, sig) in enumerate(threats):
     text(s, x + 0.62, y + 0.14, cw - 0.7, 0.3, [[(name, 12.5, INK, True, False)]])
     text(s, x + 0.62, y + 0.46, cw - 0.72, 0.3, [[(what, 10, MUTE, False, True)]])
     text(s, x + 0.62, y + 0.76, cw - 0.72, 0.4, [[("↳ ", 10, GREEN, True, False), (sig, 10, BODY, False, False)]], line_spacing=1.0)
-# 8th cell — coverage note
+# 8th cell - coverage note
 x = 0.62 + 2 * (cw + gx); y = 1.85 + 2 * (ch + gy)
 rect(s, x, y, cw, ch, fill=tint(GREEN, 0.88), shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.06)
 text(s, x + 0.25, y + 0.2, cw - 0.5, 0.9, [[("All 7 detected", 14, GREEN, True, False)],
-     [("in the working baseline — see results.", 11, BODY, False, False)]], line_spacing=1.1)
+     [("in the working baseline - see results.", 11, BODY, False, False)]], line_spacing=1.1)
 foot(s, 4)
 
 # ---- 4 architecture
@@ -305,7 +305,7 @@ for i, (t, d) in enumerate(steps):
 # decision legend
 dy = 4.5
 for i, (lab, c, desc) in enumerate([("PASS", GREEN, "behaves like its known-good self"),
-                                    ("STEP-UP", AMBER, "challenge — re-auth / approval / throttle"),
+                                    ("STEP-UP", AMBER, "challenge - re-auth / approval / throttle"),
                                     ("BLOCK", RED, "quarantine the identity, alert the SOC")]):
     x = 0.62 + i * (3.98 + 0.19)
     rect(s, x, dy, 3.98, 1.0, fill=tint(c, 0.9), shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.08)
@@ -350,7 +350,7 @@ foot(s, 6)
 # ---- 6 results (embed eval figure)
 s = nxt()
 head(s, "PROOF IT WORKS · WORKING PoC", "Results on synthetic 5G SBA traffic",
-     "A working prototype already at proposal stage — validated on 11,343 held-out request windows.")
+     "A working prototype already at proposal stage - validated on 11,343 held-out request windows.")
 metrics = [("ROC-AUC", "0.99", GREEN), ("Recall", "98%", GREEN),
            ("False positives", "0.8%", GREEN), ("Threats covered", "7 / 7", INDIGO)]
 for i, (lab, val, c) in enumerate(metrics):
@@ -384,15 +384,15 @@ foot(s, 8)
 
 # ---- 8 business case + feasibility
 s = nxt()
-head(s, "BUSINESS CASE & FEASIBILITY", "Why it matters — and why it’s deliverable",
+head(s, "BUSINESS CASE & FEASIBILITY", "Why it matters - and why it’s deliverable",
      "Illustrative value model, to be validated with Fastweb + Vodafone.")
 levers = [
     ("Risk avoided", "Detects a compromised / spoofed automation before it acts on the control "
-                     "plane — cutting mean-time-to-detect from hours to seconds and containing blast-radius."),
+                     "plane - cutting mean-time-to-detect from hours to seconds and containing blast-radius."),
     ("Enables safe automation", "Zero-trust on machine identities is the guardrail that lets the "
                                 "network move up the autonomy curve (closed-loop / self-healing) without new risk."),
     ("Compliance & audit", "Supports a NIS2 zero-trust posture; every decision is logged and "
-                           "explainable — direct evidence for GDPR / EU AI Act accountability."),
+                           "explainable - direct evidence for GDPR / EU AI Act accountability."),
     ("Low OPEX", "Automates machine-identity monitoring that no SOC can do by hand at API scale."),
 ]
 for i, (t, d) in enumerate(levers):
@@ -406,13 +406,13 @@ rect(s, 0.62, 5.5, 12.11, 1.05, fill=INK, shape=MSO_SHAPE.ROUNDED_RECTANGLE, rad
 rect(s, 0.62, 5.5, 0.09, 1.05, fill=GREEN)
 text(s, 0.92, 5.68, 11.6, 0.3, [[("FEASIBILITY", 11, tint(GREEN, 0.4), True, False)]])
 text(s, 0.92, 5.99, 11.6, 0.5,
-     [[("Synthetic-first, so no data approvals block us — and the baseline already works "
+     [[("Synthetic-first, so no data approvals block us - and the baseline already works "
         "(ROC-AUC 0.99). Real data upgrades it from credible to proven.", 12.5, WHITE, False, False)]], line_spacing=1.08)
 foot(s, 9)
 
 # ---- 9 asks + next steps
 s = nxt()
-head(s, "ASKS & NEXT STEPS", "What we need — and where we go next")
+head(s, "ASKS & NEXT STEPS", "What we need - and where we go next")
 rect(s, 0.62, 1.95, 6.05, 4.2, fill=tint(AMBER, 0.92), shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.05)
 rect(s, 0.62, 1.95, 0.09, 4.2, fill=AMBER)
 text(s, 0.92, 2.2, 5.6, 0.35, [[("STILL OPEN, FOLLOWING UP AFTER 2 SEP", 12.5, AMBER, True, False)]])
@@ -431,7 +431,7 @@ bullets(s, 7.22, 2.7, 5.3, 3.3, [
     "Parallel: storyboard (24 Sep) → shooting (Oct) → final video (1 Nov).",
 ], INDIGO, size=11.5, gap=8)
 text(s, 0.62, 6.4, 12.1, 0.4,
-     [[("Credentials prove what you have — AEGIS verifies how you behave.", 13, INK, True, True)]],
+     [[("Credentials prove what you have - AEGIS verifies how you behave.", 13, INK, True, True)]],
      align=PP_ALIGN.CENTER)
 foot(s, 10)
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-AEGIS — Zero-Trust Gate dashboard (Streamlit).
+AEGIS - Zero-Trust Gate dashboard (Streamlit).
 
 A NOC/SOC-style view of the zero-trust gate: per-agent behaviour, risk scores,
 PASS / STEP-UP / BLOCK decisions, per-threat detection, and an incident inspector
@@ -23,7 +23,7 @@ SCORED = os.path.join(HERE, "..", "reports", "scored_windows.csv")
 
 INK, LEGIT, PASS_C, STEP_C, BLOCK_C, ACC = "#1F2A37", "#3B82C4", "#0E9384", "#E0A100", "#D1495B", "#0E9384"
 
-st.set_page_config(page_title="AEGIS — Zero-Trust Gate", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="AEGIS - Zero-Trust Gate", page_icon="🛡️", layout="wide")
 
 
 @st.cache_data
@@ -39,21 +39,21 @@ def decide(risk, stepup, block):
 def explain(row):
     reasons = []
     if row["n_orphan"] >= 1:
-        reasons.append(f"**{int(row['n_orphan'])} orphan session op(s)** — update/release of a PDU "
+        reasons.append(f"**{int(row['n_orphan'])} orphan session op(s)**: update/release of a PDU "
                        "session that was never created (T6 bad sequence)")
     if row["rule"] >= 0.95 and row["n_orphan"] == 0:
-        reasons.append("**out-of-scope access** — called a Network Function outside this "
+        reasons.append("**out-of-scope access**: called a Network Function outside this "
                        "agent's onboarded scope (T1 impersonation / T7 scope-creep)")
     if row["err_rate"] > 0.25 and row["n"] >= 10:
-        reasons.append(f"**high error rate** ({row['err_rate']*100:.0f}%) — endpoint/target "
+        reasons.append(f"**high error rate** ({row['err_rate']*100:.0f}%): endpoint/target "
                        "enumeration (T3 recon)")
     if row["max_resp"] > 3500:
-        reasons.append(f"**large response payload** ({int(row['max_resp'])} bytes) — possible "
+        reasons.append(f"**large response payload** ({int(row['max_resp'])} bytes): possible "
                        "data exfiltration (T5)")
     if row["n"] > 80:
-        reasons.append(f"**request-rate spike** ({int(row['n'])} in the window) — volumetric abuse (T4)")
+        reasons.append(f"**request-rate spike** ({int(row['n'])} in the window): volumetric abuse (T4)")
     if not reasons and row["ml"] >= 0.5:
-        reasons.append("**behavioural anomaly** — the ML model finds this window unlike the "
+        reasons.append("**behavioural anomaly**: the ML model finds this window unlike the "
                        "agent's known-good baseline")
     if not reasons:
         reasons.append("within the agent's normal behavioural envelope")
@@ -78,7 +78,7 @@ view = df[df["agent_id"].isin(sel_agents)].copy()
 view["decision"] = decide(view["risk"].to_numpy(), stepup, block)
 
 # ------------------------------------------------------------------ header + KPIs
-st.title("Zero-Trust Gate — live view")
+st.title("Zero-Trust Gate - live view")
 st.caption("Every request window from a machine agent to a 5G Network Function is scored against "
            "the agent's behavioural fingerprint, then gated: PASS · STEP-UP · BLOCK.")
 
@@ -163,4 +163,4 @@ if len(flagged_df):
         st.markdown(f"- {r}")
     truth = "actual attack" if row["label"] == "attack" else "legitimate traffic (false positive)"
     st.caption(f"Ground truth (synthetic): **{truth}**"
-               + (f" — {row['attack_type']}" if row["label"] == "attack" else ""))
+               + (f" - {row['attack_type']}" if row["label"] == "attack" else ""))

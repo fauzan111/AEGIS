@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-AEGIS — synthetic agent / API traffic generator (5G SBA-style).
+AEGIS - synthetic agent / API traffic generator (5G SBA-style).
 
 Produces a labelled dataset of control-plane API requests made by machine agents
 to 5G Network Functions over the Service-Based Interface (SBI). A handful of
@@ -112,7 +112,7 @@ def gen_legit(agent, cfg, rows):
     """Generate a week of normal behaviour for one agent.
 
     SMF PDU-session endpoints follow a valid lifecycle: every update/release
-    references a session that was previously created (no orphan operations) — so
+    references a session that was previously created (no orphan operations) - so
     legitimate traffic never trips the sequence detector.
     """
     open_sessions = []
@@ -195,7 +195,7 @@ def inject_compromise(rows):  # T2: legit agent drifts to new endpoints + errors
                          label="attack", attack_type="T2_compromise"))
 
 
-def inject_recon(rows):  # T3: enumeration — broad surface, many 403/404
+def inject_recon(rows):  # T3: enumeration - broad surface, many 403/404
     attacker = "provisioning-agent"
     for _ in range(160):
         nf = random.choice(ALL_NFS)
