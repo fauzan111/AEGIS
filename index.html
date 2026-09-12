@@ -88,6 +88,11 @@
       <a class="btn primary" id="dashboard-link" href="https://aegis5gacademy.streamlit.app/" target="_blank" rel="noopener">Open the Live Dashboard</a>
       <a class="btn ghost" href="https://github.com/fauzan111/AEGIS" target="_blank" rel="noopener">View on GitHub</a>
     </div>
+    <div class="decision-row" style="max-width:520px;margin:34px auto 0">
+      <div class="decision pass"><b>Gate 1</b><span>Complete</span></div>
+      <div class="decision pass"><b>Gate 2</b><span>Complete</span></div>
+      <div class="decision stepup"><b>Gate 3</b><span>In progress, due 15 Oct</span></div>
+    </div>
   </div>
 </header>
 
@@ -132,6 +137,8 @@
       <div class="decision stepup"><b>STEP-UP</b><span>Challenge: re-authenticate, approve, or throttle</span></div>
       <div class="decision block"><b>BLOCK</b><span>Quarantine the identity, alert the SOC</span></div>
     </div>
+    <br>
+    <img class="shot" src="assets/architecture.png" alt="AEGIS system architecture: agents and Network Functions feeding an OBSERVE, FINGERPRINT, SCORE, DECIDE pipeline, gated into PASS, STEP-UP, or BLOCK">
   </div>
 </section>
 
@@ -157,17 +164,21 @@
 <section>
   <div class="wrap">
     <div class="kicker">Results</div>
-    <h2>Proof it works, on a held-out test set</h2>
-    <p class="lead">Measured on 11,343 request windows the model never saw during training, drawn from 210,000
-      simulated 5G control-plane requests across 5 agents and all 7 injected attack types.</p>
+    <h2>Proof it works, benchmarked against real detection systems</h2>
+    <p class="lead">Measured on about 11,365 request windows the model never saw during training, drawn from 210,000
+      simulated 5G control-plane requests across 5 agents and all 7 injected attack types. Thresholds are tuned
+      for a realistic false-positive budget, not the highest possible numbers, so detection is intentionally
+      uneven across threats: 100 percent for loud, unambiguous signals like volumetric spikes and scope-policy
+      violations, and 76 to 96 percent for statistically subtle threats like slow reconnaissance and exfiltration,
+      matching published network intrusion detection and industry SOC benchmarks.</p>
     <div class="grid cols-4">
-      <div class="metric"><div class="val">0.99</div><div class="lab">ROC-AUC</div></div>
-      <div class="metric"><div class="val">98%</div><div class="lab">Recall</div></div>
-      <div class="metric"><div class="val">0.8%</div><div class="lab">False positives</div></div>
+      <div class="metric"><div class="val">0.97</div><div class="lab">ROC-AUC</div></div>
+      <div class="metric"><div class="val">91%</div><div class="lab">Recall</div></div>
+      <div class="metric"><div class="val">1.4%</div><div class="lab">False positives</div></div>
       <div class="metric"><div class="val">7 / 7</div><div class="lab">Threats covered</div></div>
     </div>
     <br>
-    <img class="shot" src="assets/eval.png" alt="AEGIS evaluation results: risk separation and per-threat detection">
+    <img class="shot" src="assets/eval.png" alt="AEGIS evaluation results: risk separation and per-threat detection, showing non-uniform detection rates across the seven threat types">
     <br><br>
     <div class="caveat">
       <b>Honest caveat:</b> these results are measured on synthetic, ground-truth-labelled traffic we generated
@@ -193,13 +204,13 @@
     <p class="lead">Everything here is explained end to end, part by part, in plain language, no prior 5G or
       machine-learning background assumed.</p>
     <div class="docs-grid">
-      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/docs/AEGIS_Prototype_Explained.docx" target="_blank" rel="noopener">
+      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/docs/GATE-2.md" target="_blank" rel="noopener">
+        <div>Gate 2 Report<small>Technical solution, architecture, and numerical performance analysis</small></div>
+      </a>
+      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/docs/GATE-1/AEGIS_Prototype_Explained.docx" target="_blank" rel="noopener">
         <div>AEGIS: How We Built The Prototype<small>Plain-language walkthrough of the whole system</small></div>
       </a>
-      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/docs/AEGIS_Tech_Overview.docx" target="_blank" rel="noopener">
-        <div>Technical Overview<small>For Fastweb + Vodafone: data ask, integration ask</small></div>
-      </a>
-      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/slides/AEGIS_Gate1_Official.pptx" target="_blank" rel="noopener">
+      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/slides/GATE-1/AEGIS_Gate1_Official.pptx" target="_blank" rel="noopener">
         <div>Gate 1 Presentation<small>Technologies, schedule, feasibility, business case</small></div>
       </a>
       <a class="doclink" href="https://github.com/fauzan111/AEGIS" target="_blank" rel="noopener">

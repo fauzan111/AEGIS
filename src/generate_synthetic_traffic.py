@@ -7,7 +7,7 @@ to 5G Network Functions over the Service-Based Interface (SBI). A handful of
 LEGITIMATE agents each have a stable behavioural profile (which NFs/endpoints
 they call, timing, method mix, call-sequence graph, active hours). We then inject
 ATTACK episodes that reuse a valid agent identity but behave abnormally, covering
-threats T1–T7 from the threat model.
+threats T1-T7 from the threat model.
 
 Output: data/aegis_traffic.csv  (one row per request, fully labelled)
 
@@ -174,31 +174,53 @@ def attack_window(day, hour):
 def inject_impersonation(rows):  # T1: valid token of agent A, behaviour of another role
     victim = "nrf-heartbeat-svc"      # normally only NRF, low rate
     for _ in range(120):
-        nf = random.choice(["SMF", "UDM", "AMF"])       # way outside its scope
-        ep = random.choice(ENDPOINTS_OF[nf])
-        rows.append(dict(ts=attack_window(2, 14), agent_id=victim, nf=nf, endpoint=ep,
-                         method=endpoint_method(ep), session_id="-",
-                         resp_size=int(np.random.uniform(200, 1500)),
-                         status=random.choice([200, 200, 403]),
-                         label="attack", attack_type="T1_impersonation"))
+        if random.random() < 0.45:
+            # subtler slice: stays inside the victim's own NF (no scope violation
+            # to key on) but bursts through endpoints/rate unlike its normal
+            # register/heartbeat pattern - harder, relies on the behavioural/ML
+            # layer rather than the deterministic scope rule.
+            ep = random.choice(ENDPOINTS_OF["NRF"])
+            rows.append(dict(ts=attack_window(2, 14), agent_id=victim, nf="NRF", endpoint=ep,
+                             method=endpoint_method(ep), session_id="-",
+                             resp_size=int(np.random.uniform(200, 1500)),
+                             status=random.choice([200, 200, 404]),
+                             label="attack", attack_type="T1_impersonation"))
+        else:
+            nf = random.choice(["SMF", "UDM", "AMF"])       # way outside its scope
+            ep = random.choice(ENDPOINTS_OF[nf])
+            rows.append(dict(ts=attack_window(2, 14), agent_id=victim, nf=nf, endpoint=ep,
+                             method=endpoint_method(ep), session_id="-",
+                             resp_size=int(np.random.uniform(200, 1500)),
+                             status=random.choice([200, 200, 403]),
+                             label="attack", attack_type="T1_impersonation"))
 
 
-def inject_compromise(rows):  # T2: legit agent drifts to new endpoints + errors
-    victim = "oss-inventory-job"
+def inject_compromise(rows):  # T2: legit agent drifts to new endpoints + errors,
+                               # but WITHIN its own onboarded NFs - a real compromised
+                               # agent doesn't usually announce itself by touching NFs
+                               # it was never allowed near; it drifts more quietly
+                               # inside its own territory, which is the harder case.
+    victim = "oss-inventory-job"       # scope: NRF, UDM
     for _ in range(90):
-        nf = random.choice(["SMF", "PCF"])              # new for this agent
+        nf = random.choice(["NRF", "UDM"])
         ep = random.choice(ENDPOINTS_OF[nf])
         rows.append(dict(ts=attack_window(3, 3), agent_id=victim, nf=nf, endpoint=ep,
                          method=endpoint_method(ep), session_id="-",
-                         resp_size=int(np.random.uniform(300, 2000)),
-                         status=random.choice([200, 500, 500]),
+                         resp_size=int(np.random.uniform(150, 700)),   # normal-ish size - the
+                         status=random.choice([200, 404, 404]),        # tell is endpoint drift + errors, not payload
                          label="attack", attack_type="T2_compromise"))
 
 
-def inject_recon(rows):  # T3: enumeration - broad surface, many 403/404
-    attacker = "provisioning-agent"
+def inject_recon(rows):  # T3: enumeration WITHIN the attacker's own authorized
+                          # scope (querying NFs it has no rights to at all would
+                          # just be scope creep/T7, and gets rejected the same
+                          # way); real reconnaissance is closer to fuzzing IDs and
+                          # endpoints you already have some access to, which is
+                          # inherently a weaker, harder-to-catch signal.
+    attacker = "provisioning-agent"     # scope: NEF, UDM
+    scope_nfs = ["NEF", "UDM"]
     for _ in range(160):
-        nf = random.choice(ALL_NFS)
+        nf = random.choice(scope_nfs)
         ep = random.choice(ENDPOINTS_OF[nf])
         rows.append(dict(ts=attack_window(1, 11), agent_id=attacker, nf=nf, endpoint=ep,
                          method="GET", session_id="-", resp_size=int(np.random.uniform(50, 200)),
@@ -217,12 +239,20 @@ def inject_volumetric(rows):  # T4: flood one NF (each a real new session)
                          label="attack", attack_type="T4_volumetric"))
 
 
-def inject_exfil(rows):  # T5: low-and-slow reads, off-hours, large responses
-    attacker = "orch-session-mgr"
+def inject_exfil(rows):  # T5: low-and-slow reads, off-hours, moderately large
+                          # responses - through an endpoint already in the
+                          # attacker's own scope (a careful exfil doesn't reach
+                          # for a forbidden NF, it quietly over-uses one it's
+                          # already trusted with), which is what makes this the
+                          # hardest threat: no scope violation, no huge spike,
+                          # just a size/timing outlier that a real off-hours
+                          # legitimate pull can also occasionally resemble.
+    attacker = "provisioning-agent"      # scope: NEF, UDM; active 06:00-22:00
+    ep = "Nudm_SDM/get"                  # in scope
     for _ in range(70):
-        rows.append(dict(ts=attack_window(3, 2), agent_id=attacker, nf="UDM",
-                         endpoint="Nudm_SDM/get", method="GET", session_id="-",
-                         resp_size=int(np.random.uniform(4000, 12000)),   # big pulls
+        rows.append(dict(ts=attack_window(3, 1), agent_id=attacker, nf="UDM",
+                         endpoint=ep, method="GET", session_id="-",
+                         resp_size=int(np.random.uniform(1800, 3200)),
                          status=200, label="attack", attack_type="T5_exfil"))
 
 

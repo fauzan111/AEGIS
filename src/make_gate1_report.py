@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Fill the official 5G Academy Gate Evaluation Report template for AEGIS - Gate 1.
-Completes the cover page + Gate 1 sections (1.1–1.4), embeds the Gantt chart, and
+Completes the cover page + Gate 1 sections (1.1-1.4), embeds the Gantt chart, and
 leaves Gate 2 / Gate 3 as template placeholders (per the template instructions).
 
 Run:  .venv/Scripts/python AEGIS/src/make_gate1_report.py

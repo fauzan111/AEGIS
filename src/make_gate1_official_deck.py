@@ -3,7 +3,7 @@
 Gate 1 content, editing every slide's existing shapes/tables in place so the
 Academy's own branding, layout, colours and structure are fully preserved.
 
-No slides are added or removed — the 10 official slides (cover, index,
+No slides are added or removed - the 10 official slides (cover, index,
 intro, roadmap, schedule table, schedule picture, risk analysis, open
 points, week-by-week + next steps, thank you) are kept exactly as they are;
 only the placeholder / Lorem-ipsum text and the placeholder picture are
@@ -82,7 +82,7 @@ def by_name(slide, name):
 
 
 def all_text_frames_in(shapes):
-    """Recurse into groups too — several template captions live nested
+    """Recurse into groups too - several template captions live nested
     inside grouped icon shapes and are invisible to a flat shape scan."""
     for shape in shapes:
         if shape.shape_type == 6:  # GROUP
@@ -94,11 +94,11 @@ def all_text_frames_in(shapes):
 prs = Presentation(TEMPLATE)
 slides = list(prs.slides)
 
-# ============================================================ Slide 1 — cover
+# ============================================================ Slide 1 - cover
 # This is the shared 5G Academy programme cover (Advanced STEM Program /
-# AI-Native Networks branding) — common to every team, left untouched.
+# AI-Native Networks branding) - common to every team, left untouched.
 
-# ============================================================ Slide 2 — Index
+# ============================================================ Slide 2 - Index
 # Expanded from the template's 4 slots to 8, so the index walks through the
 # whole project in plain language first, then the official Gate 1 content
 # (technologies/schedule/feasibility/business) as one final combined topic.
@@ -133,7 +133,7 @@ for i, topic in enumerate(INDEX_TOPICS):
     r = tf.paragraphs[0].add_run(); r.text = topic
     r.font.size = Pt(14); r.font.bold = True; r.font.name = FONT; r.font.color.rgb = NAVY
 
-# ============================================================ Slide 3 — Technologies (intro/quote layout)
+# ============================================================ Slide 3 - Technologies (intro/quote layout)
 s = slides[2]
 set_text(
     by_name(s, "Rettangolo 1"),
@@ -150,7 +150,7 @@ set_text(
     "end, no specialised hardware, no licensing cost.",
 )
 # 4 icon captions nested inside groups on the right of this slide were still
-# Latin placeholder text ("Ut enim ad minim veniam...") — replace in the
+# Latin placeholder text ("Ut enim ad minim veniam...") - replace in the
 # same left-to-right, top-to-bottom order the groups appear on the slide.
 _captions = [
     "Runs entirely on open-source tools, no licensing cost.",
@@ -165,7 +165,7 @@ _caption_shapes = [
 for shp, cap in zip(_caption_shapes, _captions):
     set_text(shp, cap, size=11)
 
-# ============================================================ Slide 4 — Roadmap & Timeline
+# ============================================================ Slide 4 - Roadmap & Timeline
 s = slides[3]
 milestones = [
     ("Rettangolo 19", "24 Jul", "Threat model"),
@@ -187,7 +187,7 @@ for shape_name, date, label in milestones:
     else:
         set_text(shp, label, size=9)
 
-# ============================================================ Slide 5 — High level plan (schedule table)
+# ============================================================ Slide 5 - High level plan (schedule table)
 s = slides[4]
 tbl = by_name(s, "Tabella 31").table
 activities = [
@@ -215,7 +215,7 @@ legend = [
 for shape_name, label, sz in legend:
     set_text(by_name(s, shape_name), label, size=sz)
 
-# ============================================================ Slide 6 — High level plan (Gantt picture)
+# ============================================================ Slide 6 - High level plan (Gantt picture)
 s = slides[5]
 pic = by_name(s, "Immagine 4")
 left, top, width, height = pic.left, pic.top, pic.width, pic.height
@@ -223,7 +223,7 @@ pic._element.getparent().remove(pic._element)
 if os.path.exists(GANTT_PNG):
     s.shapes.add_picture(GANTT_PNG, left, top, width=width, height=height)
 
-# ============================================================ Slide 7 — Risk Analysis
+# ============================================================ Slide 7 - Risk Analysis
 s = slides[6]
 tbl = by_name(s, "Tabella 3").table
 risks = [
@@ -249,7 +249,7 @@ for i, (risk, like, sev, rem) in enumerate(risks, start=1):
     set_cell(tbl.cell(i, 2), sev, size=10)
     set_cell(tbl.cell(i, 3), rem, size=9)
 
-# ============================================================ Slide 8 — Open points (status tracker)
+# ============================================================ Slide 8 - Open points (status tracker)
 s = slides[7]
 tbl = by_name(s, "Tabella 4").table
 set_cell(tbl.cell(1, 1), (
@@ -284,7 +284,7 @@ set_cell(tbl.cell(13, 1), (
 set_cell(tbl.cell(16, 0), "AoB", size=10)
 set_cell(tbl.cell(16, 1), "None raised at this time.", size=10)
 
-# ============================================================ Slide 9 — Week-by-week + Next steps
+# ============================================================ Slide 9 - Week-by-week + Next steps
 s = slides[8]
 weeks = [
     ("CasellaDiTesto 40", "Sep 8-14: kick off Gate 2 hardening, add recon/"
@@ -301,7 +301,7 @@ weeks = [
 for shape_name, text_ in weeks:
     set_text(by_name(s, shape_name), text_, size=11)
 
-# ============================================================ Slide 10 — Thank you
+# ============================================================ Slide 10 - Thank you
 # Shared closing branding + legal notice, left untouched. "Thank you" text
 # itself already fits and needs no project-specific edit.
 

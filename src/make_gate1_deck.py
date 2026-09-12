@@ -288,7 +288,7 @@ head(s, "ARCHITECTURE", "OBSERVE → FINGERPRINT → SCORE → DECIDE",
 steps = [
     ("OBSERVE", "Parse each request: agent id, method, NF, endpoint, timing, payload, status."),
     ("FINGERPRINT", "Windowed behavioural vector vs the agent's known-good baseline (scope, rate, sequence, errors)."),
-    ("SCORE", "Rules (hard limits) + ML anomaly (Isolation Forest, trained on legit only) → risk 0–1."),
+    ("SCORE", "Rules (hard limits) + ML anomaly (Isolation Forest, trained on legit only) → risk 0-1."),
     ("DECIDE", "Thresholds → PASS / STEP-UP / BLOCK, with a plain-language reason."),
 ]
 cw = 2.9
@@ -324,7 +324,7 @@ s = nxt()
 head(s, "TECHNOLOGY STACK", "Open-source, reproducible, edge-deployable",
      "Everything the PoC needs runs on open-source; internal platforms are an upgrade, not a dependency.")
 cols = [
-    ("DATA", GREEN, ["Synthetic 5G SBA traffic generator (5 agents, threats T1–T7)",
+    ("DATA", GREEN, ["Synthetic 5G SBA traffic generator (5 agents, threats T1-T7)",
                      "208k labelled requests over the Service-Based Interface",
                      "Real M2M / API-gateway logs pluggable if offered"]),
     ("DETECTION", INDIGO, ["Isolation Forest (scikit-learn), trained on legit only",
@@ -365,7 +365,7 @@ text(s, 10.25, 3.15, 2.7, 3.6,
       [("Left: legit traffic sits near risk 0; attacks separate cleanly above the "
         "STEP-UP/BLOCK lines.", 10.5, BODY, False, False)],
       [("", 6, BODY, False, False)],
-      [("Right: every threat T1–T7 detected (recon 89%, the rest ~100%).", 10.5, BODY, False, False)],
+      [("Right: every threat T1-T7 detected (recon 89%, the rest ~100%).", 10.5, BODY, False, False)],
       [("", 6, BODY, False, False)],
       [("STEP-UP is a soft challenge; only ~0.8% of legit traffic is ever flagged.", 10.5, MUTE, False, True)]],
      line_spacing=1.14, space_after=4)
