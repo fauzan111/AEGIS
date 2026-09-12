@@ -15,7 +15,7 @@
   body{margin:0;background:var(--bg);color:var(--ink);
     font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.55}
   .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
-  header.hero{padding:90px 0 70px;text-align:center;
+  header.hero{padding:90px 0 50px;text-align:center;
     background:radial-gradient(ellipse at 50% -10%, rgba(34,195,230,.18), transparent 60%)}
   .kicker{color:var(--accent);font-weight:700;letter-spacing:.08em;font-size:13px;text-transform:uppercase}
   h1{font-size:56px;margin:14px 0 8px;font-weight:800;letter-spacing:-.02em}
@@ -75,6 +75,32 @@
   footer{padding:40px 0;text-align:center;color:var(--mute);font-size:13px;border-top:1px solid var(--hair)}
   footer a{color:var(--accent);text-decoration:none}
   img{max-width:100%}
+
+  /* gate nav */
+  .gate-nav{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+  .gate-btn{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--hair);
+    border-radius:12px;padding:14px 20px;cursor:pointer;font-family:inherit;font-size:15px;color:var(--ink);
+    transition:border-color .15s ease,transform .15s ease}
+  .gate-btn:hover{transform:translateY(-2px);border-color:var(--accent2)}
+  .gate-btn .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .gate-btn[data-status="done"] .dot{background:var(--green)}
+  .gate-btn[data-status="progress"] .dot{background:var(--amber)}
+  .gate-btn b{font-weight:700}
+  .gate-btn .st{color:var(--mute);font-size:12.5px}
+  .gate-btn.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .recap-card{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:22px 24px;
+    margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+  .recap-card .rc-text b{color:var(--green)}
+  .recap-card .rc-text p{margin:6px 0 0;color:var(--mute);font-size:14px;max-width:560px}
+  .teaser-card{background:var(--panel);border:1px dashed var(--hair);border-radius:14px;padding:22px 24px;
+    margin-top:44px;text-align:center}
+  .teaser-card b{color:var(--amber)}
+  .teaser-card p{margin:6px 0 0;color:var(--mute);font-size:14px}
+  .gate-panel[hidden]{display:none}
+  .placeholder{text-align:center;padding:70px 20px;background:var(--card);border:1px dashed var(--hair);
+    border-radius:16px}
+  .placeholder h2{margin-bottom:14px}
+  .placeholder p{color:var(--mute);max-width:480px;margin:0 auto 8px}
 </style>
 </head>
 <body>
@@ -89,13 +115,100 @@
       <a class="btn primary" id="dashboard-link" href="https://aegis5gacademy.streamlit.app/" target="_blank" rel="noopener">Open the Live Dashboard</a>
       <a class="btn ghost" href="https://github.com/fauzan111/AEGIS" target="_blank" rel="noopener">View on GitHub</a>
     </div>
-    <div class="decision-row" style="max-width:520px;margin:34px auto 0">
-      <div class="decision pass"><b>Gate 1</b><span>Complete</span></div>
-      <div class="decision pass"><b>Gate 2</b><span>Complete</span></div>
-      <div class="decision stepup"><b>Gate 3</b><span>In progress, due 15 Oct</span></div>
-    </div>
+    <nav class="gate-nav" id="gate-nav">
+      <button class="gate-btn" data-gate="gate1" data-status="done"><span class="dot"></span><span><b>Gate 1</b><br><span class="st">Complete</span></span></button>
+      <button class="gate-btn" data-gate="gate2" data-status="done"><span class="dot"></span><span><b>Gate 2</b><br><span class="st">Complete</span></span></button>
+      <button class="gate-btn" data-gate="gate3" data-status="progress"><span class="dot"></span><span><b>Gate 3</b><br><span class="st">In progress, due 15 Oct</span></span></button>
+    </nav>
   </div>
 </header>
+
+<!-- ================================================================ GATE 1 ================================================================ -->
+<main class="gate-panel" id="gate1" hidden>
+
+<section style="border-top:none">
+  <div class="wrap">
+    <div class="kicker">Gate 1 · Technologies, Planning &amp; Feasibility</div>
+    <h2>The technology approach, the schedule, and why it's feasible</h2>
+    <p class="lead">Gate 1 established the case for AEGIS: what technologies it needed, how the project would be
+      scheduled, whether it was technically feasible, and what the economic case for it looks like.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">1.1 Technologies</div>
+    <h2>What AEGIS is built on</h2>
+    <div class="grid cols-3">
+      <div class="card"><h3>5G control-plane surface</h3><p>The 5G Service-Based Architecture and Service-Based Interface: Network Functions (AMF, SMF, NRF, PCF, UDM, NEF) exposing HTTP/2 REST APIs.</p></div>
+      <div class="card"><h3>Zero-Trust security</h3><p>NIST SP 800-207: continuous, per-request verification of machine identities, applied to behaviour rather than credentials alone.</p></div>
+      <div class="card"><h3>Behavioural ML</h3><p>Unsupervised anomaly detection (Isolation Forest) trained only on legitimate traffic, combined with deterministic policy rules and a session-state machine.</p></div>
+      <div class="card"><h3>Detection features</h3><p>Request rate and timing, distinct Network Functions and endpoints, method mix, call-sequence integrity, error rate, payload size, time of day.</p></div>
+      <div class="card"><h3>Data &amp; tooling</h3><p>A synthetic 5G SBA traffic generator, scikit-learn and pandas for modelling, a Streamlit dashboard for the PASS / STEP-UP / BLOCK gate.</p></div>
+      <div class="card"><h3>Standards</h3><p>NIST SP 800-207, 3GPP SBA, TM Forum closed-loop automation, aligned with NIS2, GDPR, and the EU AI Act.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">1.2 Project Schedule</div>
+    <h2>From proposal to a working PoC by 15 October</h2>
+    <img class="shot" src="assets/gantt.png" alt="AEGIS project Gantt chart">
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">1.3 Feasibility Analysis</div>
+    <h2>De-risked by a working baseline, not just a plan</h2>
+    <p class="lead">Resources are entirely open-source and run on a standard laptop. The main external risk, access
+      to real network traffic, is mitigated by a synthetic-first approach: a working baseline already demonstrated
+      detection across all seven modelled threat classes before Gate 2 hardened and rigorously evaluated it.</p>
+    <table>
+      <tr><th>Risk</th><th>Mitigation</th></tr>
+      <tr><td>Synthetic data may not capture real agent behaviour</td><td>Modelled on 3GPP SBA semantics; the pipeline ingests real logs when available</td></tr>
+      <tr><td>False positives disrupt operations</td><td>Held-out calibration plus a soft STEP-UP action before BLOCK; thresholds are tunable</td></tr>
+      <tr><td>Real-data access is not granted</td><td>The full PoC is deliverable on synthetic data alone</td></tr>
+      <tr><td>Adaptive or evasive attackers</td><td>Layered rules, ML, and a session-state machine; roadmap for periodic retraining</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">1.4 Economic / Business Analysis</div>
+    <h2>Why this is worth building</h2>
+    <div class="grid cols-3">
+      <div class="card"><h3>Cost</h3><p>Development is engineering time only, open-source, no licensing. Production adds modest edge compute for the inline gate.</p></div>
+      <div class="card"><h3>Risk avoided</h3><p>Catching a compromised or spoofed automation before it acts cuts mean-time-to-detect from hours to seconds.</p></div>
+      <div class="card"><h3>Enabler of automation</h3><p>Zero-trust on machine identities is the guardrail that lets an operator safely expand network automation.</p></div>
+      <div class="card"><h3>Compliance &amp; audit</h3><p>Supports a NIS2 zero-trust posture; explainable, logged decisions provide audit evidence for GDPR and the EU AI Act.</p></div>
+      <div class="card"><h3>Operational efficiency</h3><p>Automates machine-identity monitoring that cannot be performed manually at API scale.</p></div>
+      <div class="card"><h3>Market relevance</h3><p>Securing AI agents on critical infrastructure is an emerging priority; AEGIS covers a gap credential-based AAA doesn't.</p></div>
+    </div>
+    <div class="teaser-card">
+      <b>Next: Gate 2</b>
+      <p>See the full architecture, working implementation, and numerical results.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ================================================================ GATE 2 ================================================================ -->
+<main class="gate-panel" id="gate2">
+
+<section style="border-top:none">
+  <div class="wrap">
+    <div class="recap-card">
+      <div class="rc-text"><b>Gate 1, complete</b>
+        <p>Technology approach, schedule, feasibility, and business case were established and validated.</p>
+      </div>
+      <button class="btn ghost" data-gate="gate1" style="border:1px solid var(--hair);cursor:pointer">View Gate 1</button>
+    </div>
+  </div>
+</section>
 
 <section>
   <div class="wrap">
@@ -187,16 +300,33 @@
       against real network traffic yet, that's exactly the validation real or anonymised data from Fastweb and
       Vodafone would give us.
     </div>
+    <div class="teaser-card">
+      <b>Gate 3, in progress</b>
+      <p>Final working Proof of Concept demonstration and video, due 15 October.</p>
+    </div>
   </div>
 </section>
 
-<section>
+</main>
+
+<!-- ================================================================ GATE 3 ================================================================ -->
+<main class="gate-panel" id="gate3" hidden>
+
+<section style="border-top:none">
   <div class="wrap">
-    <div class="kicker">Project Schedule</div>
-    <h2>From proposal to a working PoC by 15 October</h2>
-    <img class="shot" src="assets/gantt.png" alt="AEGIS project Gantt chart">
+    <div class="placeholder">
+      <div class="kicker">Gate 3 · Proof of Concept (Final)</div>
+      <h2>In progress</h2>
+      <p>Due 15 October 2026. This page will cover the final working Proof of Concept, the core features
+        demonstrated, technical feasibility results, and a video walkthrough.</p>
+      <p>Check back after Gate 3, or watch the repository for updates.</p>
+    </div>
   </div>
 </section>
+
+</main>
+
+<!-- ================================================================ GLOBAL ================================================================ -->
 
 <section>
   <div class="wrap">
@@ -235,6 +365,24 @@
     <a href="https://github.com/fauzan111/AEGIS" target="_blank" rel="noopener">github.com/fauzan111/AEGIS</a>
   </div>
 </footer>
+
+<script>
+  function showGate(id) {
+    if (!document.getElementById(id)) id = 'gate2';
+    document.querySelectorAll('.gate-panel').forEach(function(p) { p.hidden = (p.id !== id); });
+    document.querySelectorAll('.gate-btn[data-gate]').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.gate === id);
+    });
+    if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
+    window.scrollTo({top: 0, behavior: 'instant'});
+  }
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-gate]');
+    if (btn) showGate(btn.dataset.gate);
+  });
+  window.addEventListener('hashchange', function() { showGate(location.hash.slice(1)); });
+  showGate(location.hash.slice(1) || 'gate2');
+</script>
 
 </body>
 </html>
