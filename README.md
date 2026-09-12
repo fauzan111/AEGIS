@@ -25,6 +25,9 @@ Established the technology approach (behavioural fingerprinting plus rules and M
 Delivered the full technical solution: a concrete system architecture, a working end-to-end implementation, and a complete numerical performance analysis, benchmarked against real-world detection research (published network intrusion detection studies, industry SOC false-positive data, and behavioural-analytics literature) rather than tuned for the highest possible numbers.
 
 - **Architecture:** an OBSERVE to FINGERPRINT to SCORE to DECIDE zero-trust gate, covering all seven modelled threats (identity spoofing, compromised agents, reconnaissance, volumetric abuse, slow exfiltration, sequence anomalies, and scope creep).
+
+  <img src="assets/architecture.png" alt="AEGIS system architecture" width="420">
+
 - **Results, on a held-out test set of about 11,365 request windows:** ROC-AUC 0.965, recall 90.7%, false-positive rate 1.4%, with detection rate intentionally uneven across threats (76 to 100 percent) rather than a uniform, implausible 100 percent everywhere, matching how real detection systems perform in the published research.
 - **A live dashboard:** real-time risk scoring, a network-topology view showing which agents are touching which Network Functions, a live-replay mode, and an incident inspector that explains why each decision was made in plain language.
 - **A rigorous operating-point justification:** a full ROC and threshold-sensitivity analysis behind the chosen decision thresholds, not just a picked number.
