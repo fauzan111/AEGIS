@@ -31,7 +31,7 @@ from generate_synthetic_traffic import AGENTS as AGENT_CFG, ALL_NFS  # noqa: E40
 
 INK, LEGIT, PASS_C, STEP_C, BLOCK_C, ACC = "#1F2A37", "#3B82C4", "#0E9384", "#E0A100", "#D1495B", "#0E9384"
 
-st.set_page_config(page_title="AEGIS - Zero-Trust Gate", page_icon="[shield]", layout="wide")
+st.set_page_config(page_title="AEGIS - Zero-Trust Gate", page_icon="\U0001F6E1", layout="wide")
 
 
 @st.cache_data
@@ -108,7 +108,7 @@ def draw_topology(view, agents_shown, highlight_row=None):
 df = load()
 all_wins = np.sort(df["win"].unique())
 
-st.sidebar.title("[shield] AEGIS")
+st.sidebar.title("\U0001F6E1 AEGIS")
 st.sidebar.caption("Zero-Trust Identity for AI Agents on the Network")
 st.sidebar.markdown("**5G Academy 2026 - Team 4**")
 st.sidebar.markdown("[Project overview & docs](https://fauzan111.github.io/AEGIS/)")
@@ -156,7 +156,7 @@ st.caption("Every request window from a machine agent to a 5G Network Function i
 if live_mode:
     st.info(f"**Live replay active** - showing traffic up to {pd.Timestamp(current_time)} "
            f"({len(view):,} of {len(df[df['agent_id'].isin(sel_agents)]):,} windows revealed so far).",
-           icon="[live]")
+           icon="\U0001F534")
 
 npass = int((view.decision == "PASS").sum())
 nstep = int((view.decision == "STEP-UP").sum())
