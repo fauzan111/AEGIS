@@ -16,6 +16,7 @@ Data: reports/scored_windows.csv  (produced by aegis_detect.py)
 import os
 import sys
 import time
+import base64
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -25,13 +26,47 @@ import matplotlib.pyplot as plt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCORED = os.path.join(HERE, "..", "reports", "scored_windows.csv")
+BADGE = os.path.join(HERE, "..", "assets", "fastweb_vodafone_badge.png")
 sys.path.insert(0, HERE)
 from aegis_detect import REASON_TEXT  # noqa: E402
 from generate_synthetic_traffic import AGENTS as AGENT_CFG, ALL_NFS  # noqa: E402
 
 INK, LEGIT, PASS_C, STEP_C, BLOCK_C, ACC = "#1F2A37", "#3B82C4", "#0E9384", "#E0A100", "#D1495B", "#0E9384"
+BG, PANEL, CARD, HAIR, MUTE = "#060b18", "#0c1526", "#111c33", "#1c2b45", "#93a3bd"
 
 st.set_page_config(page_title="AEGIS - Zero-Trust Gate", page_icon="\U0001F6E1", layout="wide")
+
+
+@st.cache_data
+def badge_data_uri():
+    if not os.path.exists(BADGE):
+        return None
+    with open(BADGE, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+
+st.markdown(f"""
+<style>
+  .aegis-hero {{
+    background: radial-gradient(ellipse at 50% -20%, rgba(34,195,230,.25), transparent 65%), {BG};
+    border: 1px solid {HAIR}; border-radius: 18px; padding: 34px 30px 26px;
+    text-align: center; margin-bottom: 22px;
+  }}
+  .aegis-hero .kicker {{ color: {ACC}; font-weight: 700; letter-spacing: .08em; font-size: 12px;
+    text-transform: uppercase; }}
+  .aegis-hero h1 {{ color: #f2f6fb; font-size: 40px; font-weight: 800; letter-spacing: -.02em;
+    margin: 10px 0 6px; }}
+  .aegis-hero .tag {{ color: {MUTE}; font-size: 15px; max-width: 620px; margin: 0 auto 14px; }}
+  .aegis-hero .pitch {{ color: #cfe3ee; font-style: italic; font-size: 13.5px; margin-bottom: 16px; }}
+  .aegis-hero img.badge {{ height: 34px; margin-top: 6px; }}
+  .kpi-row {{ display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 6px; }}
+  .kpi-card {{ background: {PANEL}; border: 1px solid {HAIR}; border-left: 4px solid var(--ac);
+    border-radius: 12px; padding: 14px 16px; }}
+  .kpi-card .v {{ font-size: 26px; font-weight: 800; color: #f2f6fb; }}
+  .kpi-card .l {{ font-size: 11px; color: {MUTE}; text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }}
+  @media (max-width: 900px) {{ .kpi-row {{ grid-template-columns: repeat(3, 1fr); }} }}
+</style>
+""", unsafe_allow_html=True)
 
 
 @st.cache_data
@@ -69,19 +104,19 @@ def draw_topology(view, agents_shown, highlight_row=None):
     agent's authorized baseline scope; a highlighted incident's actual
     touched NFs are drawn in red, and a red-dashed edge marks a scope
     violation (an NF outside that agent's onboarded baseline)."""
-    fig, ax = plt.subplots(figsize=(8.5, 5.2))
+    fig, ax = plt.subplots(figsize=(5.6, 3.4), dpi=130)
     agent_y = {a: i for i, a in enumerate(agents_shown)}
     nf_y = {nf: i * (len(agents_shown) - 1) / max(len(ALL_NFS) - 1, 1) for i, nf in enumerate(ALL_NFS)}
 
     for a in agents_shown:
-        ax.scatter([0], [agent_y[a]], s=900, color="#E8F1F8", edgecolor=ACC, zorder=3, linewidths=1.5)
-        ax.text(-0.06, agent_y[a], a, ha="right", va="center", fontsize=9, color=INK)
+        ax.scatter([0], [agent_y[a]], s=420, color="#E8F1F8", edgecolor=ACC, zorder=3, linewidths=1.2)
+        ax.text(-0.07, agent_y[a], a, ha="right", va="center", fontsize=7, color=INK)
         for nf in AGENT_CFG.get(a, {}).get("scope", []):
-            ax.plot([0, 1], [agent_y[a], nf_y[nf]], color="#C9D2DA", lw=1, zorder=1)
+            ax.plot([0, 1], [agent_y[a], nf_y[nf]], color="#C9D2DA", lw=0.7, zorder=1)
 
     for nf in ALL_NFS:
-        ax.scatter([1], [nf_y[nf]], s=700, color="#DCEEEB", edgecolor="#0E9384", zorder=3, linewidths=1.5)
-        ax.text(1.06, nf_y[nf], nf, ha="left", va="center", fontsize=9, color=INK)
+        ax.scatter([1], [nf_y[nf]], s=320, color="#DCEEEB", edgecolor="#0E9384", zorder=3, linewidths=1.2)
+        ax.text(1.07, nf_y[nf], nf, ha="left", va="center", fontsize=7, color=INK)
 
     if highlight_row is not None:
         a = highlight_row["agent_id"]
@@ -89,18 +124,19 @@ def draw_topology(view, agents_shown, highlight_row=None):
         scope = set(AGENT_CFG.get(a, {}).get("scope", []))
         dc = {"BLOCK": BLOCK_C, "STEP-UP": STEP_C}.get(highlight_row["decision"], ACC)
         if a in agent_y:
-            ax.scatter([0], [agent_y[a]], s=1100, color=dc, edgecolor=INK, zorder=5, linewidths=2, alpha=0.85)
+            ax.scatter([0], [agent_y[a]], s=520, color=dc, edgecolor=INK, zorder=5, linewidths=1.5, alpha=0.85)
         for nf in touched:
             if nf not in nf_y:
                 continue
             violation = nf not in scope
-            ax.plot([0, 1], [agent_y.get(a, 0), nf_y[nf]], color=dc, lw=3.2 if violation else 2.2,
+            ax.plot([0, 1], [agent_y.get(a, 0), nf_y[nf]], color=dc, lw=2.4 if violation else 1.6,
                     ls="--" if violation else "-", zorder=4)
-            ax.scatter([1], [nf_y[nf]], s=850, color=dc, edgecolor=INK, zorder=5, linewidths=2, alpha=0.85)
+            ax.scatter([1], [nf_y[nf]], s=400, color=dc, edgecolor=INK, zorder=5, linewidths=1.5, alpha=0.85)
 
-    ax.set_xlim(-0.55, 1.35)
+    ax.set_xlim(-0.62, 1.4)
     ax.set_ylim(-0.8, max(len(agents_shown), 1) - 0.2)
     ax.axis("off")
+    fig.tight_layout(pad=0.4)
     return fig
 
 
@@ -150,9 +186,19 @@ if live_mode:
     view = view[view["win"] <= current_time]
 
 # ------------------------------------------------------------------ header + KPIs
-st.title("Zero-Trust Gate - live view")
-st.caption("Every request window from a machine agent to a 5G Network Function is scored against "
-           "the agent's behavioural fingerprint, then gated: PASS / STEP-UP / BLOCK.")
+badge_uri = badge_data_uri()
+badge_html = f'<img class="badge" src="{badge_uri}" alt="Fastweb + Vodafone">' if badge_uri else ""
+st.markdown(f"""
+<div class="aegis-hero">
+  <div class="kicker">5G Academy 2026 &middot; Topic 2, Security &middot; Team 4</div>
+  <h1>\U0001F6E1 AEGIS - Zero-Trust Gate, live view</h1>
+  <div class="tag">Every request window from a machine agent to a 5G Network Function is scored against
+    the agent's behavioural fingerprint, then gated: PASS / STEP-UP / BLOCK.</div>
+  <div class="pitch">"Credentials prove what you have, AEGIS verifies how you behave."</div>
+  {badge_html}
+</div>
+""", unsafe_allow_html=True)
+
 if live_mode:
     st.info(f"**Live replay active** - showing traffic up to {pd.Timestamp(current_time)} "
            f"({len(view):,} of {len(df[df['agent_id'].isin(sel_agents)]):,} windows revealed so far).",
@@ -166,13 +212,19 @@ flagged = (view.decision != "PASS").to_numpy().astype(int)
 rec = float((flagged[y == 1]).mean()) if (y == 1).any() else 0.0
 fpr = float((flagged[y == 0]).mean()) if (y == 0).any() else 0.0
 
-c = st.columns(6)
-c[0].metric("Windows", f"{len(view):,}")
-c[1].metric("PASS", f"{npass:,}")
-c[2].metric("STEP-UP", f"{nstep:,}")
-c[3].metric("BLOCK", f"{nblock:,}")
-c[4].metric("Attack recall", f"{rec*100:.0f}%")
-c[5].metric("False-positive rate", f"{fpr*100:.1f}%")
+kpis = [
+    ("Windows", f"{len(view):,}", MUTE),
+    ("PASS", f"{npass:,}", PASS_C),
+    ("STEP-UP", f"{nstep:,}", STEP_C),
+    ("BLOCK", f"{nblock:,}", BLOCK_C),
+    ("Attack recall", f"{rec*100:.0f}%", ACC),
+    ("False-positive rate", f"{fpr*100:.1f}%", BLOCK_C if fpr > 0.05 else ACC),
+]
+kpi_html = "".join(
+    f'<div class="kpi-card" style="--ac:{color}"><div class="v">{val}</div><div class="l">{label}</div></div>'
+    for label, val, color in kpis
+)
+st.markdown(f'<div class="kpi-row">{kpi_html}</div>', unsafe_allow_html=True)
 
 st.divider()
 
@@ -231,7 +283,9 @@ with tab_topology:
     incidents = view[view.decision != "PASS"].sort_values("win", ascending=False)
     hl_row = incidents.iloc[0] if len(incidents) else None
     fig = draw_topology(view, sel_agents, highlight_row=hl_row)
-    st.pyplot(fig, use_container_width=True)
+    topo_l, topo_c, topo_r = st.columns([1, 2, 1])
+    with topo_c:
+        st.pyplot(fig, use_container_width=False)
     if hl_row is not None:
         dc = {"BLOCK": "red", "STEP-UP": "orange"}.get(hl_row["decision"], "grey")
         st.markdown(f"Most recent incident shown: **{hl_row['agent_id']}** at `{hl_row['win']}`, "
