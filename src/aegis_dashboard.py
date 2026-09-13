@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCORED = os.path.join(HERE, "..", "reports", "scored_windows.csv")
 BADGE = os.path.join(HERE, "..", "assets", "fastweb_vodafone_badge.png")
-HERO_BG = os.path.join(HERE, "..", "assets", "hero_landscape.png")
+HERO_BG = os.path.join(HERE, "..", "assets", "hero_landscape.jpg")
 sys.path.insert(0, HERE)
 from aegis_detect import REASON_TEXT  # noqa: E402
 from generate_synthetic_traffic import AGENTS as AGENT_CFG, ALL_NFS  # noqa: E402
@@ -36,6 +36,103 @@ INK, LEGIT, PASS_C, STEP_C, BLOCK_C, ACC = "#1F2A37", "#3B82C4", "#0E9384", "#E0
 BG, PANEL, CARD, HAIR, MUTE = "#060b18", "#0c1526", "#111c33", "#1c2b45", "#93a3bd"
 
 st.set_page_config(page_title="AEGIS - Zero-Trust Gate", page_icon="\U0001F6E1", layout="wide")
+
+# ------------------------------------------------------------------ i18n
+# UI chrome (header, sidebar controls, KPI/tab labels) is translated; deep
+# data content (the scored-window table, per-row incident text) stays in
+# English, a common scope boundary for a first pass at i18n.
+TRANSLATIONS = {
+    "EN": {
+        "kicker": "5G Academy 2026 &middot; Topic 2, Security &middot; Team 4",
+        "hero_title": "Together, we secure the network",
+        "hero_tag": "Every request window from a machine agent to a 5G Network Function is scored "
+                    "against the agent's behavioural fingerprint, then gated: PASS / STEP-UP / BLOCK.",
+        "hero_pitch": "“Credentials prove what you have, AEGIS verifies how you behave.”",
+        "nav_dashboard": "Live Dashboard", "nav_docs": "Docs", "nav_github": "GitHub",
+        "sidebar_caption": "Zero-Trust Identity for AI Agents on the Network",
+        "sidebar_team": "5G Academy 2026 - Team 4",
+        "sidebar_link": "Project overview & docs",
+        "stepup_threshold": "STEP-UP threshold", "block_threshold": "BLOCK threshold",
+        "agents": "Agents", "live_replay": "Live replay",
+        "enable_live_replay": "Enable live replay",
+        "enable_live_replay_help": "Stream the scored windows in time order, like watching a live "
+                                   "SOC feed, instead of viewing the full historical set at once.",
+        "speed": "Speed (windows/tick)", "play": "Play", "pause": "Pause", "reset": "Reset",
+        "playhead": "Playhead", "now": "Now",
+        "live_replay_active": "Live replay active",
+        "replay_status": "showing traffic up to {t} ({shown:,} of {total:,} windows revealed so far).",
+        "kpi_windows": "Windows", "kpi_pass": "PASS", "kpi_stepup": "STEP-UP", "kpi_block": "BLOCK",
+        "kpi_recall": "Attack recall", "kpi_fpr": "False-positive rate",
+        "tab_overview": "Live overview", "tab_topology": "Network topology",
+        "tab_inspector": "Incident inspector",
+        "risk_over_time": "Risk over time", "detection_per_threat": "Detection per threat",
+        "no_attack_windows": "No attack windows in the current view yet.",
+        "live_event_feed": "Live event feed",
+        "no_incidents_yet": "No incidents yet in the current view.",
+        "agents_to_nfs": "Agents -> Network Functions",
+        "topology_caption": "Grey lines are each agent's authorized baseline scope. A highlighted "
+                            "incident's actual traffic is drawn in colour; a dashed line marks a "
+                            "scope violation, an NF outside that agent's onboarded baseline.",
+        "most_recent_incident": "Most recent incident shown", "touching_nfs": "touching NF(s)",
+        "no_incidents_to_highlight": "No incidents in the current view to highlight yet.",
+        "incident_inspector": "Incident inspector",
+        "windows_flagged": "windows flagged (STEP-UP or BLOCK). Highest-risk first.",
+        "inspect_window": "Inspect a flagged window",
+        "decision": "Decision", "risk_label": "risk",
+        "agent_label": "Agent", "window_label": "Window", "requests_label": "Requests",
+        "distinct_nfs_label": "Distinct NFs", "nfs_touched_label": "NFs touched",
+        "why_flagged": "Why AEGIS flagged this window:",
+        "ground_truth": "Ground truth (synthetic)",
+        "actual_attack": "actual attack", "false_positive": "legitimate traffic (false positive)",
+    },
+    "IT": {
+        "kicker": "5G Academy 2026 &middot; Topic 2, Sicurezza &middot; Team 4",
+        "hero_title": "Insieme, proteggiamo la rete",
+        "hero_tag": "Ogni finestra di richieste da un agente macchina verso una Network Function 5G "
+                    "viene valutata rispetto all'impronta comportamentale dell'agente, poi decisa: "
+                    "PASS / STEP-UP / BLOCK.",
+        "hero_pitch": "“Le credenziali provano cosa hai, AEGIS verifica come ti comporti.”",
+        "nav_dashboard": "Dashboard Live", "nav_docs": "Documenti", "nav_github": "GitHub",
+        "sidebar_caption": "Identita Zero-Trust per Agenti AI sulla Rete",
+        "sidebar_team": "5G Academy 2026 - Team 4",
+        "sidebar_link": "Panoramica del progetto",
+        "stepup_threshold": "Soglia STEP-UP", "block_threshold": "Soglia BLOCK",
+        "agents": "Agenti", "live_replay": "Replay Live",
+        "enable_live_replay": "Attiva replay live",
+        "enable_live_replay_help": "Riproduce le finestre valutate in ordine cronologico, come un "
+                                   "feed SOC dal vivo, invece di mostrare subito l'intero storico.",
+        "speed": "Velocita (finestre/tick)", "play": "Riproduci", "pause": "Pausa",
+        "reset": "Reimposta", "playhead": "Posizione", "now": "Adesso",
+        "live_replay_active": "Replay live attivo",
+        "replay_status": "traffico mostrato fino a {t} ({shown:,} di {total:,} finestre rivelate finora).",
+        "kpi_windows": "Finestre", "kpi_pass": "PASS", "kpi_stepup": "STEP-UP", "kpi_block": "BLOCK",
+        "kpi_recall": "Richiamo attacchi", "kpi_fpr": "Tasso falsi positivi",
+        "tab_overview": "Panoramica live", "tab_topology": "Topologia di rete",
+        "tab_inspector": "Analisi incidenti",
+        "risk_over_time": "Rischio nel tempo", "detection_per_threat": "Rilevamento per minaccia",
+        "no_attack_windows": "Nessuna finestra di attacco nella vista attuale.",
+        "live_event_feed": "Feed eventi live",
+        "no_incidents_yet": "Nessun incidente nella vista attuale.",
+        "agents_to_nfs": "Agenti -> Network Function",
+        "topology_caption": "Le linee grigie rappresentano l'ambito autorizzato di ciascun agente. "
+                            "Il traffico reale di un incidente evidenziato e mostrato a colori; una "
+                            "linea tratteggiata indica una violazione dell'ambito, una NF fuori dal "
+                            "perimetro assegnato all'agente.",
+        "most_recent_incident": "Incidente piu recente mostrato", "touching_nfs": "NF coinvolte",
+        "no_incidents_to_highlight": "Nessun incidente da evidenziare nella vista attuale.",
+        "incident_inspector": "Analisi incidenti",
+        "windows_flagged": "finestre segnalate (STEP-UP o BLOCK). Rischio piu alto per primo.",
+        "inspect_window": "Ispeziona una finestra segnalata",
+        "decision": "Decisione", "risk_label": "rischio",
+        "agent_label": "Agente", "window_label": "Finestra", "requests_label": "Richieste",
+        "distinct_nfs_label": "NF distinte", "nfs_touched_label": "NF coinvolte",
+        "why_flagged": "Perche AEGIS ha segnalato questa finestra:",
+        "ground_truth": "Verita di base (sintetica)",
+        "actual_attack": "attacco reale", "false_positive": "traffico legittimo (falso positivo)",
+    },
+}
+LANG = "EN" if st.session_state.get("lang_toggle", True) else "IT"
+T = TRANSLATIONS[LANG]
 
 
 @st.cache_data
@@ -46,35 +143,33 @@ def data_uri(path, mime="image/png"):
         return f"data:{mime};base64," + base64.b64encode(f.read()).decode()
 
 
-hero_uri = data_uri(HERO_BG) or ""
+hero_uri = data_uri(HERO_BG, mime="image/jpeg") or ""
 
 st.markdown(f"""
 <style>
   .aegis-topbar {{ display: flex; align-items: center; justify-content: space-between;
-    padding: 4px 4px 14px; flex-wrap: wrap; gap: 10px; }}
-  .aegis-topbar img.badge {{ height: 30px; display: block; }}
-  .aegis-topbar .tb-nav {{ display: flex; gap: 22px; }}
-  .aegis-topbar .tb-nav span {{ color: {MUTE}; font-size: 13px; font-weight: 600;
+    padding: 6px 4px 16px; flex-wrap: wrap; gap: 10px; }}
+  .aegis-topbar img.badge {{ height: 46px; display: block; }}
+  .aegis-topbar .tb-nav {{ display: flex; gap: 26px; }}
+  .aegis-topbar .tb-nav span {{ color: {INK}; font-size: 15px; font-weight: 700;
     letter-spacing: .02em; }}
-  .lang-toggle {{ display: flex; align-items: center; gap: 8px; color: #f2f6fb;
-    font-size: 12.5px; font-weight: 700; letter-spacing: .04em; }}
-  .lang-toggle .pill {{ width: 34px; height: 17px; background: {HAIR}; border-radius: 20px;
-    position: relative; }}
-  .lang-toggle .pill .dot {{ width: 13px; height: 13px; background: {ACC}; border-radius: 50%;
-    position: absolute; top: 2px; right: 2px; }}
+  div[data-testid="stToggle"] {{ display: flex; justify-content: center; }}
+  .lang-label {{ font-size: 14px; font-weight: 800; color: {INK}; padding-top: 6px; }}
   .aegis-hero-banner {{
-    background-image: url('{hero_uri}'); background-size: cover; background-position: center;
-    border: 1px solid {HAIR}; border-radius: 18px; padding: 78px 30px 64px;
+    background-image: linear-gradient(180deg, rgba(6,11,24,.35) 0%, rgba(6,11,24,.05) 30%,
+      rgba(6,11,24,.15) 100%), url('{hero_uri}');
+    background-size: cover; background-position: center;
+    border: 1px solid {HAIR}; border-radius: 18px; padding: 110px 30px 90px;
     text-align: center; margin-bottom: 22px; position: relative;
   }}
-  .aegis-hero-banner .kicker {{ color: #8fe9ff; font-weight: 700; letter-spacing: .1em;
-    font-size: 12px; text-transform: uppercase; text-shadow: 0 2px 12px rgba(0,0,0,.7); }}
-  .aegis-hero-banner h1 {{ color: #ffffff; font-size: 46px; font-weight: 800;
-    letter-spacing: -.02em; margin: 12px 0 10px; text-shadow: 0 4px 24px rgba(0,0,0,.6); }}
-  .aegis-hero-banner .tag {{ color: #eaf6fb; font-size: 15px; max-width: 640px; margin: 0 auto 14px;
-    text-shadow: 0 2px 12px rgba(0,0,0,.7); }}
-  .aegis-hero-banner .pitch {{ color: #ffffff; font-style: italic; font-size: 13.5px;
-    text-shadow: 0 2px 12px rgba(0,0,0,.7); }}
+  .aegis-hero-banner .kicker {{ color: #ffffff; font-weight: 800; letter-spacing: .12em;
+    font-size: 14px; text-transform: uppercase; text-shadow: 0 2px 14px rgba(0,0,0,.85); }}
+  .aegis-hero-banner h1 {{ color: #ffffff; font-size: 68px; font-weight: 900; line-height: 1.05;
+    letter-spacing: -.02em; margin: 16px 0 18px; text-shadow: 0 4px 30px rgba(0,0,0,.75); }}
+  .aegis-hero-banner .tag {{ color: #ffffff; font-size: 17px; max-width: 680px; margin: 0 auto 16px;
+    text-shadow: 0 2px 16px rgba(0,0,0,.85); font-weight: 500; }}
+  .aegis-hero-banner .pitch {{ color: #ffffff; font-style: italic; font-size: 15px;
+    text-shadow: 0 2px 16px rgba(0,0,0,.85); font-weight: 600; }}
   .kpi-row {{ display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 6px; }}
   .kpi-card {{ background: {PANEL}; border: 1px solid {HAIR}; border-left: 4px solid var(--ac);
     border-radius: 12px; padding: 14px 16px; }}
@@ -161,38 +256,37 @@ df = load()
 all_wins = np.sort(df["win"].unique())
 
 st.sidebar.title("\U0001F6E1 AEGIS")
-st.sidebar.caption("Zero-Trust Identity for AI Agents on the Network")
-st.sidebar.markdown("**5G Academy 2026 - Team 4**")
-st.sidebar.markdown("[Project overview & docs](https://fauzan111.github.io/AEGIS/)")
+st.sidebar.caption(T["sidebar_caption"])
+st.sidebar.markdown(f"**{T['sidebar_team']}**")
+st.sidebar.markdown(f"[{T['sidebar_link']}](https://fauzan111.github.io/AEGIS/)")
 st.sidebar.divider()
 
-stepup = st.sidebar.slider("STEP-UP threshold", 0.1, 0.95, 0.60, 0.05)
-block = st.sidebar.slider("BLOCK threshold", stepup, 1.0, max(0.85, stepup), 0.05)
+stepup = st.sidebar.slider(T["stepup_threshold"], 0.1, 0.95, 0.60, 0.05)
+block = st.sidebar.slider(T["block_threshold"], stepup, 1.0, max(0.85, stepup), 0.05)
 agents = sorted(df["agent_id"].unique())
-sel_agents = st.sidebar.multiselect("Agents", agents, default=agents)
+sel_agents = st.sidebar.multiselect(T["agents"], agents, default=agents)
 
 st.sidebar.divider()
-st.sidebar.subheader("Live replay")
-live_mode = st.sidebar.checkbox("Enable live replay", value=False,
-                                help="Stream the scored windows in time order, like watching a live SOC feed, "
-                                     "instead of viewing the full historical set at once.")
+st.sidebar.subheader(T["live_replay"])
+live_mode = st.sidebar.checkbox(T["enable_live_replay"], value=False,
+                                help=T["enable_live_replay_help"])
 if "play_idx" not in st.session_state:
     st.session_state.play_idx = 0
 if "playing" not in st.session_state:
     st.session_state.playing = False
 
 if live_mode:
-    speed = st.sidebar.select_slider("Speed (windows/tick)", options=[1, 2, 5, 10, 25, 50], value=5)
+    speed = st.sidebar.select_slider(T["speed"], options=[1, 2, 5, 10, 25, 50], value=5)
     pc1, pc2 = st.sidebar.columns(2)
-    if pc1.button("Play" if not st.session_state.playing else "Pause", use_container_width=True):
+    if pc1.button(T["play"] if not st.session_state.playing else T["pause"], use_container_width=True):
         st.session_state.playing = not st.session_state.playing
-    if pc2.button("Reset", use_container_width=True):
+    if pc2.button(T["reset"], use_container_width=True):
         st.session_state.play_idx = 0
         st.session_state.playing = False
     st.session_state.play_idx = st.sidebar.slider(
-        "Playhead", 0, len(all_wins) - 1, st.session_state.play_idx)
+        T["playhead"], 0, len(all_wins) - 1, st.session_state.play_idx)
     current_time = all_wins[st.session_state.play_idx]
-    st.sidebar.caption(f"Now: {pd.Timestamp(current_time)}")
+    st.sidebar.caption(f"{T['now']}: {pd.Timestamp(current_time)}")
 else:
     current_time = all_wins[-1]
 
@@ -204,27 +298,37 @@ if live_mode:
 # ------------------------------------------------------------------ header + KPIs
 badge_uri = data_uri(BADGE)
 badge_html = f'<img class="badge" src="{badge_uri}" alt="Fastweb + Vodafone">' if badge_uri else \
-    '<span style="color:#f2f6fb;font-weight:800;font-size:15px">AEGIS</span>'
+    '<span style="color:#f2f6fb;font-weight:800;font-size:22px">AEGIS</span>'
+
+tb_logo, tb_nav, tb_lang_l, tb_lang_toggle, tb_lang_r = st.columns([2.2, 3, 0.5, 1, 0.5])
+with tb_logo:
+    st.markdown(f'<div class="aegis-topbar"><div class="tb-left">{badge_html}</div></div>',
+               unsafe_allow_html=True)
+with tb_nav:
+    st.markdown(f'<div class="aegis-topbar"><div class="tb-nav">'
+               f'<span>{T["nav_dashboard"]}</span><span>{T["nav_docs"]}</span>'
+               f'<span>{T["nav_github"]}</span></div></div>', unsafe_allow_html=True)
+with tb_lang_l:
+    st.markdown('<div class="lang-label" style="text-align:right">IT</div>', unsafe_allow_html=True)
+with tb_lang_toggle:
+    is_en = st.toggle("lang", value=st.session_state.get("lang_toggle", True),
+                      key="lang_toggle", label_visibility="collapsed")
+with tb_lang_r:
+    st.markdown('<div class="lang-label">EN</div>', unsafe_allow_html=True)
 
 st.markdown(f"""
-<div class="aegis-topbar">
-  <div class="tb-left">{badge_html}</div>
-  <div class="tb-nav"><span>Live Dashboard</span><span>Docs</span><span>GitHub</span></div>
-  <div class="lang-toggle">EN<span class="pill"><span class="dot"></span></span></div>
-</div>
 <div class="aegis-hero-banner">
-  <div class="kicker">5G Academy 2026 &middot; Topic 2, Security &middot; Team 4</div>
-  <h1>Together, we secure the network</h1>
-  <div class="tag">Every request window from a machine agent to a 5G Network Function is scored against
-    the agent's behavioural fingerprint, then gated: PASS / STEP-UP / BLOCK.</div>
-  <div class="pitch">"Credentials prove what you have, AEGIS verifies how you behave."</div>
+  <div class="kicker">{T['kicker']}</div>
+  <h1>{T['hero_title']}</h1>
+  <div class="tag">{T['hero_tag']}</div>
+  <div class="pitch">{T['hero_pitch']}</div>
 </div>
 """, unsafe_allow_html=True)
 
 if live_mode:
-    st.info(f"**Live replay active** - showing traffic up to {pd.Timestamp(current_time)} "
-           f"({len(view):,} of {len(df[df['agent_id'].isin(sel_agents)]):,} windows revealed so far).",
-           icon="\U0001F534")
+    status = T["replay_status"].format(t=pd.Timestamp(current_time), shown=len(view),
+                                        total=len(df[df["agent_id"].isin(sel_agents)]))
+    st.info(f"**{T['live_replay_active']}** - {status}", icon="\U0001F534")
 
 npass = int((view.decision == "PASS").sum())
 nstep = int((view.decision == "STEP-UP").sum())
@@ -235,12 +339,12 @@ rec = float((flagged[y == 1]).mean()) if (y == 1).any() else 0.0
 fpr = float((flagged[y == 0]).mean()) if (y == 0).any() else 0.0
 
 kpis = [
-    ("Windows", f"{len(view):,}", MUTE),
-    ("PASS", f"{npass:,}", PASS_C),
-    ("STEP-UP", f"{nstep:,}", STEP_C),
-    ("BLOCK", f"{nblock:,}", BLOCK_C),
-    ("Attack recall", f"{rec*100:.0f}%", ACC),
-    ("False-positive rate", f"{fpr*100:.1f}%", BLOCK_C if fpr > 0.05 else ACC),
+    (T["kpi_windows"], f"{len(view):,}", MUTE),
+    (T["kpi_pass"], f"{npass:,}", PASS_C),
+    (T["kpi_stepup"], f"{nstep:,}", STEP_C),
+    (T["kpi_block"], f"{nblock:,}", BLOCK_C),
+    (T["kpi_recall"], f"{rec*100:.0f}%", ACC),
+    (T["kpi_fpr"], f"{fpr*100:.1f}%", BLOCK_C if fpr > 0.05 else ACC),
 ]
 kpi_html = "".join(
     f'<div class="kpi-card" style="--ac:{color}"><div class="v">{val}</div><div class="l">{label}</div></div>'
@@ -251,13 +355,13 @@ st.markdown(f'<div class="kpi-row">{kpi_html}</div>', unsafe_allow_html=True)
 st.divider()
 
 tab_overview, tab_topology, tab_inspector = st.tabs(
-    ["Live overview", "Network topology", "Incident inspector"])
+    [T["tab_overview"], T["tab_topology"], T["tab_inspector"]])
 
 # ------------------------------------------------------------------ tab 1: overview
 with tab_overview:
     left, right = st.columns([1.35, 1])
     with left:
-        st.subheader("Risk over time")
+        st.subheader(T["risk_over_time"])
         fig, ax = plt.subplots(figsize=(7.6, 3.5))
         leg = view[view.label == "legit"]
         atk = view[view.label == "attack"]
@@ -274,7 +378,7 @@ with tab_overview:
         st.pyplot(fig, use_container_width=True)
 
     with right:
-        st.subheader("Detection per threat")
+        st.subheader(T["detection_per_threat"])
         atk = view[view.label == "attack"]
         if len(atk):
             rows = []
@@ -283,9 +387,9 @@ with tab_overview:
             pt = pd.DataFrame(rows, columns=["threat", "windows", "detected_%"]).set_index("threat")
             st.bar_chart(pt["detected_%"], color=ACC, height=280)
         else:
-            st.info("No attack windows in the current view yet.")
+            st.info(T["no_attack_windows"])
 
-    st.subheader("Live event feed")
+    st.subheader(T["live_event_feed"])
     feed = view[view.decision != "PASS"].sort_values("win", ascending=False).head(12)
     if len(feed):
         for _, r in feed.iterrows():
@@ -294,14 +398,12 @@ with tab_overview:
                 else "behavioural anomaly (ML)"
             st.markdown(f"`{r['win']}` **{r['agent_id']}** {badge} (risk {r['risk']:.2f}): {reason}")
     else:
-        st.caption("No incidents yet in the current view.")
+        st.caption(T["no_incidents_yet"])
 
 # ------------------------------------------------------------------ tab 2: topology
 with tab_topology:
-    st.subheader("Agents -> Network Functions")
-    st.caption("Grey lines are each agent's authorized baseline scope. A highlighted incident's actual "
-              "traffic is drawn in colour; a dashed line marks a scope violation, an NF outside that "
-              "agent's onboarded baseline.")
+    st.subheader(T["agents_to_nfs"])
+    st.caption(T["topology_caption"])
     incidents = view[view.decision != "PASS"].sort_values("win", ascending=False)
     hl_row = incidents.iloc[0] if len(incidents) else None
     fig = draw_topology(view, sel_agents, highlight_row=hl_row)
@@ -310,17 +412,17 @@ with tab_topology:
         st.pyplot(fig, use_container_width=False)
     if hl_row is not None:
         dc = {"BLOCK": "red", "STEP-UP": "orange"}.get(hl_row["decision"], "grey")
-        st.markdown(f"Most recent incident shown: **{hl_row['agent_id']}** at `{hl_row['win']}`, "
-                   f"decision :{dc}[{hl_row['decision']}], touching NF(s): "
+        st.markdown(f"{T['most_recent_incident']}: **{hl_row['agent_id']}** at `{hl_row['win']}`, "
+                   f"{T['decision'].lower()} :{dc}[{hl_row['decision']}], {T['touching_nfs']}: "
                    f"{', '.join(sorted(hl_row['nfs_touched'])) or 'none recorded'}.")
     else:
-        st.caption("No incidents in the current view to highlight yet.")
+        st.caption(T["no_incidents_to_highlight"])
 
 # ------------------------------------------------------------------ tab 3: incident inspector
 with tab_inspector:
-    st.subheader("Incident inspector")
+    st.subheader(T["incident_inspector"])
     flagged_df = view[view.decision != "PASS"].sort_values("risk", ascending=False)
-    st.caption(f"{len(flagged_df):,} windows flagged (STEP-UP or BLOCK). Highest-risk first.")
+    st.caption(f"{len(flagged_df):,} {T['windows_flagged']}")
 
     show = flagged_df[["win", "agent_id", "decision", "risk", "rule", "rule_reason", "ml", "n",
                        "distinct_nf", "err_rate", "n_orphan", "max_resp", "label", "attack_type"]].copy()
@@ -331,24 +433,24 @@ with tab_inspector:
                                "risk": st.column_config.ProgressColumn("risk", min_value=0, max_value=1)})
 
     if len(flagged_df):
-        idx = st.selectbox("Inspect a flagged window",
+        idx = st.selectbox(T["inspect_window"],
                            options=list(flagged_df.index)[:200],
                            format_func=lambda i: f"{flagged_df.loc[i,'agent_id']} - "
                                                  f"{flagged_df.loc[i,'win']} - {flagged_df.loc[i,'decision']} "
                                                  f"(risk {flagged_df.loc[i,'risk']:.2f})")
         row = flagged_df.loc[idx]
         dc = {"BLOCK": BLOCK_C, "STEP-UP": STEP_C}.get(row["decision"], PASS_C)
-        st.markdown(f"### Decision: <span style='color:{dc}'>**{row['decision']}**</span> "
-                    f"- risk **{row['risk']:.2f}**  (rule {row['rule']:.2f} - ml {row['ml']:.2f})",
+        st.markdown(f"### {T['decision']}: <span style='color:{dc}'>**{row['decision']}**</span> "
+                    f"- {T['risk_label']} **{row['risk']:.2f}**  (rule {row['rule']:.2f} - ml {row['ml']:.2f})",
                     unsafe_allow_html=True)
-        st.markdown(f"**Agent:** `{row['agent_id']}`  -  **Window:** {row['win']}  -  "
-                    f"**Requests:** {int(row['n'])}  -  **Distinct NFs:** {int(row['distinct_nf'])}  -  "
-                    f"**NFs touched:** {', '.join(sorted(row['nfs_touched'])) or 'n/a'}")
-        st.markdown("**Why AEGIS flagged this window:**")
+        st.markdown(f"**{T['agent_label']}:** `{row['agent_id']}`  -  **{T['window_label']}:** {row['win']}  -  "
+                    f"**{T['requests_label']}:** {int(row['n'])}  -  **{T['distinct_nfs_label']}:** {int(row['distinct_nf'])}  -  "
+                    f"**{T['nfs_touched_label']}:** {', '.join(sorted(row['nfs_touched'])) or 'n/a'}")
+        st.markdown(f"**{T['why_flagged']}**")
         for r in explain(row):
             st.markdown(f"- {r}")
-        truth = "actual attack" if row["label"] == "attack" else "legitimate traffic (false positive)"
-        st.caption(f"Ground truth (synthetic): **{truth}**"
+        truth = T["actual_attack"] if row["label"] == "attack" else T["false_positive"]
+        st.caption(f"{T['ground_truth']}: **{truth}**"
                   + (f" - {row['attack_type']}" if row["label"] == "attack" else ""))
 
 # ------------------------------------------------------------------ live replay tick
