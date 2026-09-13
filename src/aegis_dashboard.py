@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCORED = os.path.join(HERE, "..", "reports", "scored_windows.csv")
 BADGE = os.path.join(HERE, "..", "assets", "fastweb_vodafone_badge.png")
+HERO_BG = os.path.join(HERE, "..", "assets", "hero_landscape.png")
 sys.path.insert(0, HERE)
 from aegis_detect import REASON_TEXT  # noqa: E402
 from generate_synthetic_traffic import AGENTS as AGENT_CFG, ALL_NFS  # noqa: E402
@@ -38,27 +39,42 @@ st.set_page_config(page_title="AEGIS - Zero-Trust Gate", page_icon="\U0001F6E1",
 
 
 @st.cache_data
-def badge_data_uri():
-    if not os.path.exists(BADGE):
+def data_uri(path, mime="image/png"):
+    if not os.path.exists(path):
         return None
-    with open(BADGE, "rb") as f:
-        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+    with open(path, "rb") as f:
+        return f"data:{mime};base64," + base64.b64encode(f.read()).decode()
 
+
+hero_uri = data_uri(HERO_BG) or ""
 
 st.markdown(f"""
 <style>
-  .aegis-hero {{
-    background: radial-gradient(ellipse at 50% -20%, rgba(34,195,230,.25), transparent 65%), {BG};
-    border: 1px solid {HAIR}; border-radius: 18px; padding: 34px 30px 26px;
-    text-align: center; margin-bottom: 22px;
+  .aegis-topbar {{ display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 4px 14px; flex-wrap: wrap; gap: 10px; }}
+  .aegis-topbar img.badge {{ height: 30px; display: block; }}
+  .aegis-topbar .tb-nav {{ display: flex; gap: 22px; }}
+  .aegis-topbar .tb-nav span {{ color: {MUTE}; font-size: 13px; font-weight: 600;
+    letter-spacing: .02em; }}
+  .lang-toggle {{ display: flex; align-items: center; gap: 8px; color: #f2f6fb;
+    font-size: 12.5px; font-weight: 700; letter-spacing: .04em; }}
+  .lang-toggle .pill {{ width: 34px; height: 17px; background: {HAIR}; border-radius: 20px;
+    position: relative; }}
+  .lang-toggle .pill .dot {{ width: 13px; height: 13px; background: {ACC}; border-radius: 50%;
+    position: absolute; top: 2px; right: 2px; }}
+  .aegis-hero-banner {{
+    background-image: url('{hero_uri}'); background-size: cover; background-position: center;
+    border: 1px solid {HAIR}; border-radius: 18px; padding: 78px 30px 64px;
+    text-align: center; margin-bottom: 22px; position: relative;
   }}
-  .aegis-hero .kicker {{ color: {ACC}; font-weight: 700; letter-spacing: .08em; font-size: 12px;
-    text-transform: uppercase; }}
-  .aegis-hero h1 {{ color: #f2f6fb; font-size: 40px; font-weight: 800; letter-spacing: -.02em;
-    margin: 10px 0 6px; }}
-  .aegis-hero .tag {{ color: {MUTE}; font-size: 15px; max-width: 620px; margin: 0 auto 14px; }}
-  .aegis-hero .pitch {{ color: #cfe3ee; font-style: italic; font-size: 13.5px; margin-bottom: 16px; }}
-  .aegis-hero img.badge {{ height: 34px; margin-top: 6px; }}
+  .aegis-hero-banner .kicker {{ color: #8fe9ff; font-weight: 700; letter-spacing: .1em;
+    font-size: 12px; text-transform: uppercase; text-shadow: 0 2px 12px rgba(0,0,0,.7); }}
+  .aegis-hero-banner h1 {{ color: #ffffff; font-size: 46px; font-weight: 800;
+    letter-spacing: -.02em; margin: 12px 0 10px; text-shadow: 0 4px 24px rgba(0,0,0,.6); }}
+  .aegis-hero-banner .tag {{ color: #eaf6fb; font-size: 15px; max-width: 640px; margin: 0 auto 14px;
+    text-shadow: 0 2px 12px rgba(0,0,0,.7); }}
+  .aegis-hero-banner .pitch {{ color: #ffffff; font-style: italic; font-size: 13.5px;
+    text-shadow: 0 2px 12px rgba(0,0,0,.7); }}
   .kpi-row {{ display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 6px; }}
   .kpi-card {{ background: {PANEL}; border: 1px solid {HAIR}; border-left: 4px solid var(--ac);
     border-radius: 12px; padding: 14px 16px; }}
@@ -186,16 +202,22 @@ if live_mode:
     view = view[view["win"] <= current_time]
 
 # ------------------------------------------------------------------ header + KPIs
-badge_uri = badge_data_uri()
-badge_html = f'<img class="badge" src="{badge_uri}" alt="Fastweb + Vodafone">' if badge_uri else ""
+badge_uri = data_uri(BADGE)
+badge_html = f'<img class="badge" src="{badge_uri}" alt="Fastweb + Vodafone">' if badge_uri else \
+    '<span style="color:#f2f6fb;font-weight:800;font-size:15px">AEGIS</span>'
+
 st.markdown(f"""
-<div class="aegis-hero">
+<div class="aegis-topbar">
+  <div class="tb-left">{badge_html}</div>
+  <div class="tb-nav"><span>Live Dashboard</span><span>Docs</span><span>GitHub</span></div>
+  <div class="lang-toggle">EN<span class="pill"><span class="dot"></span></span></div>
+</div>
+<div class="aegis-hero-banner">
   <div class="kicker">5G Academy 2026 &middot; Topic 2, Security &middot; Team 4</div>
-  <h1>\U0001F6E1 AEGIS - Zero-Trust Gate, live view</h1>
+  <h1>Together, we secure the network</h1>
   <div class="tag">Every request window from a machine agent to a 5G Network Function is scored against
     the agent's behavioural fingerprint, then gated: PASS / STEP-UP / BLOCK.</div>
   <div class="pitch">"Credentials prove what you have, AEGIS verifies how you behave."</div>
-  {badge_html}
 </div>
 """, unsafe_allow_html=True)
 
