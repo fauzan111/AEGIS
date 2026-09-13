@@ -151,10 +151,25 @@ st.markdown(f"""
     padding: 6px 4px 16px; flex-wrap: wrap; gap: 10px; }}
   .aegis-topbar img.badge {{ height: 46px; display: block; }}
   .aegis-topbar .tb-nav {{ display: flex; gap: 26px; }}
-  .aegis-topbar .tb-nav span {{ color: {INK}; font-size: 15px; font-weight: 700;
+  .aegis-topbar .tb-nav span {{ color: #f2f6fb; font-size: 15px; font-weight: 700;
     letter-spacing: .02em; }}
-  div[data-testid="stToggle"] {{ display: flex; justify-content: center; }}
-  .lang-label {{ font-size: 14px; font-weight: 800; color: {INK}; padding-top: 6px; }}
+  /* IT/EN labels attached directly to the toggle's own container (via its
+     st-key-lang_toggle class) so they sit immediately next to the switch no
+     matter the viewport width - separate st.columns stretch with the page,
+     which pushed the labels away from the switch on wide screens. */
+  .st-key-lang_toggle div[data-testid="stCheckbox"] {{
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }}
+  .st-key-lang_toggle div[data-testid="stCheckbox"]::before {{
+    content: "IT"; order: -1; font-size: 14px; font-weight: 800; color: {MUTE};
+  }}
+  .st-key-lang_toggle div[data-testid="stCheckbox"]::after {{
+    content: "EN"; font-size: 14px; font-weight: 800; color: #f2f6fb;
+  }}
+  .st-key-lang_toggle div[data-testid="stCheckbox"]:has(input:checked)::before {{ color: {MUTE}; }}
+  .st-key-lang_toggle div[data-testid="stCheckbox"]:has(input:checked)::after {{ color: #f2f6fb; }}
+  .st-key-lang_toggle div[data-testid="stCheckbox"]:has(input:not(:checked))::before {{ color: #f2f6fb; }}
+  .st-key-lang_toggle div[data-testid="stCheckbox"]:has(input:not(:checked))::after {{ color: {MUTE}; }}
   .aegis-hero-banner {{
     background-image: linear-gradient(180deg, rgba(6,11,24,.35) 0%, rgba(6,11,24,.05) 30%,
       rgba(6,11,24,.15) 100%), url('{hero_uri}');
@@ -300,7 +315,7 @@ badge_uri = data_uri(BADGE)
 badge_html = f'<img class="badge" src="{badge_uri}" alt="Fastweb + Vodafone">' if badge_uri else \
     '<span style="color:#f2f6fb;font-weight:800;font-size:22px">AEGIS</span>'
 
-tb_logo, tb_nav, tb_lang_l, tb_lang_toggle, tb_lang_r = st.columns([2.2, 3, 0.5, 1, 0.5])
+tb_logo, tb_nav, tb_lang = st.columns([2.2, 3, 1.6])
 with tb_logo:
     st.markdown(f'<div class="aegis-topbar"><div class="tb-left">{badge_html}</div></div>',
                unsafe_allow_html=True)
@@ -308,13 +323,13 @@ with tb_nav:
     st.markdown(f'<div class="aegis-topbar"><div class="tb-nav">'
                f'<span>{T["nav_dashboard"]}</span><span>{T["nav_docs"]}</span>'
                f'<span>{T["nav_github"]}</span></div></div>', unsafe_allow_html=True)
-with tb_lang_l:
-    st.markdown('<div class="lang-label" style="text-align:right">IT</div>', unsafe_allow_html=True)
-with tb_lang_toggle:
+with tb_lang:
+    # IT/EN labels are attached to this toggle via CSS (::before/::after on its
+    # own container, see the st-key-lang_toggle rules above) so they always sit
+    # immediately next to the switch, instead of drifting apart in separate
+    # st.columns that stretch with the page width.
     is_en = st.toggle("lang", value=st.session_state.get("lang_toggle", True),
                       key="lang_toggle", label_visibility="collapsed")
-with tb_lang_r:
-    st.markdown('<div class="lang-label">EN</div>', unsafe_allow_html=True)
 
 st.markdown(f"""
 <div class="aegis-hero-banner">
