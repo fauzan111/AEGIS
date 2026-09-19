@@ -297,9 +297,56 @@
     <div class="caveat">
       <b>Honest caveat:</b> these results are measured on synthetic, ground-truth-labelled traffic we generated
       ourselves. They prove the detection method works and is well-calibrated, not that it has been validated
-      against real network traffic yet, that's exactly the validation real or anonymised data from Fastweb and
-      Vodafone would give us.
+      against real network traffic yet. Extending the pipeline to real M2M / API-gateway traffic is the next
+      validation step, already designed in without requiring rework.
     </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">State of the Art, Head-to-Head</div>
+    <h2>Benchmarked against a named, reimplemented baseline, not a citation</h2>
+    <p class="lead">"State of the art" can mean anything unless you name a specific system, describe how it
+      works, and test it on your own data. We did that: Statistical Process Control (SPC), a z-score
+      control-chart detector, the classic baseline this kind of behavioural monitoring descends from. We
+      implemented it ourselves and ran it on the identical train/test split AEGIS is evaluated on, a real
+      head-to-head, not two numbers from two different papers.</p>
+    <div class="grid cols-4">
+      <div class="metric"><div class="val">0.944</div><div class="lab">SPC ROC-AUC</div></div>
+      <div class="metric"><div class="val">63.4%</div><div class="lab">SPC recall</div></div>
+      <div class="metric"><div class="val">0.965</div><div class="lab">AEGIS ROC-AUC</div></div>
+      <div class="metric"><div class="val">90.7%</div><div class="lab">AEGIS recall</div></div>
+    </div>
+    <br>
+    <img class="shot" src="assets/baseline_comparison.png" alt="AEGIS vs. the SPC z-score baseline: ROC curves and per-threat detection at matched false-positive rate">
+    <br><br>
+    <p class="lead" style="margin-bottom:0">The improvement is statistically significant, not just a bigger
+      number: a paired bootstrap on the AUC difference gives <b>p = 0.015</b> (95% CI on the difference:
+      [0.004, 0.040], excluding zero). SPC catches loud, single-feature deviations well but is structurally
+      blind to threats with no single-feature signature, compromised-agent drift, reconnaissance, and broken
+      sequences, because it has no notion of scope, sequence, or cross-window behaviour. That gap is the
+      measured case for fingerprinting plus fusion, not an assumed architectural preference.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Threshold Justification</div>
+    <h2>Not "optimal", optimal with respect to what</h2>
+    <p class="lead">A threshold can only rigorously be called optimal with respect to a stated objective. The
+      Neyman-Pearson lemma defines the true optimum as the likelihood-ratio test that maximises detection
+      subject to a false-alarm cap, which requires knowing the real class-conditional distributions, not
+      available in production or here. What we check honestly instead: our chosen STEP-UP threshold (0.60) is
+      Pareto-efficient, no single alternative threshold beats it on both recall and false-positive rate at
+      once, and sits within 0.2 percentage points of FPR of the empirical Neyman-Pearson-achievable frontier
+      for this risk score, a small, measured gap, not a meaningful inefficiency.</p>
+    <img class="shot" src="assets/bayes_risk_threshold.png" alt="Bayes-risk-optimal threshold vs. assumed cost ratio, and expected-cost curves at illustrative cost ratios">
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
     <div class="teaser-card">
       <b>Gate 3, in progress</b>
       <p>Final working Proof of Concept demonstration and video, due 15 October.</p>
@@ -335,8 +382,14 @@
     <p class="lead">Everything here is explained end to end, part by part, in plain language, no prior 5G or
       machine-learning background assumed.</p>
     <div class="docs-grid">
-      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/docs/GATE-2.md" target="_blank" rel="noopener">
-        <div>Gate 2 Report<small>Technical solution, architecture, and numerical performance analysis</small></div>
+      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/docs/GATE-2/GATE-2.md" target="_blank" rel="noopener">
+        <div>Gate 2 Report<small>Technical solution, architecture, state-of-the-art comparison, and numerical performance analysis</small></div>
+      </a>
+      <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/slides/GATE-2/AEGIS_Gate2_Official.pptx" target="_blank" rel="noopener">
+        <div>Gate 2 Presentation<small>Architecture, baseline comparison, and numerical results deck</small></div>
+      </a>
+      <a class="doclink" href="https://github.com/fauzan111/AEGIS/tree/main/reports/GATE-2" target="_blank" rel="noopener">
+        <div>Gate 2 Evidence<small>Bootstrap CIs, threshold stability, temporal split, drift, and evasion checks</small></div>
       </a>
       <a class="doclink" href="https://github.com/fauzan111/AEGIS/blob/main/docs/GATE-1/AEGIS_Prototype_Explained.docx" target="_blank" rel="noopener">
         <div>AEGIS: How We Built The Prototype<small>Plain-language walkthrough of the whole system</small></div>

@@ -14,3 +14,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .gstack/
+
+# local backup copies / scratch dumps, not meant for the public repo
+slides/GATE-2/BACKUP FILES/
+*.BACKUP*.docx
+*.BACKUP*.pptx
+gate2_dump*.txt
