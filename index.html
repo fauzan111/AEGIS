@@ -169,7 +169,7 @@
       <tr><th>Risk</th><th>Mitigation</th></tr>
       <tr><td>Synthetic data may not capture real agent behaviour</td><td>Modelled on 3GPP SBA semantics; the pipeline ingests real logs when available</td></tr>
       <tr><td>False positives disrupt operations</td><td>Held-out calibration plus a soft STEP-UP action before BLOCK; thresholds are tunable</td></tr>
-      <tr><td>Real-data access is not granted</td><td>The full PoC is deliverable on synthetic data alone</td></tr>
+      <tr><td>Real network traffic isn't validated yet</td><td>The full PoC is deliverable and evaluated end-to-end on synthetic data alone; real traffic is the next upgrade step, already designed in without rework</td></tr>
       <tr><td>Adaptive or evasive attackers</td><td>Layered rules, ML, and a session-state machine; roadmap for periodic retraining</td></tr>
     </table>
   </div>
@@ -212,16 +212,6 @@
 
 <section>
   <div class="wrap">
-    <div class="kicker">The Working Prototype</div>
-    <h2>See it decide, in real time</h2>
-    <p class="lead">Every request window from a machine agent is scored against that agent's own behavioural
-      fingerprint, then gated: PASS, STEP-UP, or BLOCK, always with a plain-language reason.</p>
-    <img class="shot" src="assets/dashboard.jpg" alt="AEGIS zero-trust gate dashboard, live view">
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
     <div class="kicker">The Problem</div>
     <h2>Authentication proves what you have. Not who you are.</h2>
     <p class="lead">Orchestration tools, closed-loop automation, and AI copilots now call 5G Network Functions
@@ -233,6 +223,16 @@
       <div class="card"><h3>Out of scope</h3><p>End-user devices, the data plane / user traffic, and general AI safety.</p></div>
       <div class="card"><h3>Standard</h3><p>Built on NIST SP 800-207 zero-trust principles: never trust, always verify, verify continuously.</p></div>
     </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">The Working Prototype</div>
+    <h2>See it decide, in real time</h2>
+    <p class="lead">Every request window from a machine agent is scored against that agent's own behavioural
+      fingerprint, then gated: PASS, STEP-UP, or BLOCK, always with a plain-language reason.</p>
+    <img class="shot" src="assets/dashboard.jpg" alt="AEGIS zero-trust gate dashboard, live view">
   </div>
 </section>
 
