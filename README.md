@@ -20,23 +20,43 @@ Orchestration tools, closed-loop automation, and AI copilots now call 5G Network
 
 Established the technology approach (behavioural fingerprinting plus rules and ML anomaly detection on the 5G Service-Based Architecture), the project schedule, technical feasibility, and the economic and business case for a zero-trust gate on machine identities.
 
+<img src="assets/gantt.png" alt="AEGIS project Gantt chart, Gate 1 to Gate 3" width="600">
+
+*Project schedule from proposal to the final Proof of Concept - technology approach, feasibility analysis, and economic case were validated before any code was written, de-risking the build that followed.*
+
+Full Gate 1 materials: `slides/GATE-1/` (official deck) and `docs/GATE-1/` (prototype write-up).
+
 ### Gate 2 - Technical Solution & Architecture (complete)
 
-Delivered the full technical solution: a concrete system architecture, a working end-to-end implementation, and a complete numerical performance analysis, benchmarked against real-world detection research (published network intrusion detection studies, industry SOC false-positive data, and behavioural-analytics literature) rather than tuned for the highest possible numbers.
+Delivered the full technical solution: a concrete system architecture, a working end-to-end implementation, a complete numerical performance analysis benchmarked against a **named, reimplemented state-of-the-art baseline**, and a statistically rigorous justification for the chosen decision thresholds.
 
-- **Architecture:** an OBSERVE to FINGERPRINT to SCORE to DECIDE zero-trust gate, covering all seven modelled threats (identity spoofing, compromised agents, reconnaissance, volumetric abuse, slow exfiltration, sequence anomalies, and scope creep).
+**Architecture** - an OBSERVE to FINGERPRINT to SCORE to DECIDE zero-trust gate, covering all seven modelled threats (identity spoofing, compromised agents, reconnaissance, volumetric abuse, slow exfiltration, sequence anomalies, and scope creep).
 
-  <img src="assets/architecture.png" alt="AEGIS system architecture" width="420">
+<img src="assets/architecture.png" alt="AEGIS system architecture" width="420">
 
-- **Results, on a held-out test set of about 11,365 request windows:** ROC-AUC 0.965, recall 90.7%, false-positive rate 1.4%, with detection rate intentionally uneven across threats (76 to 100 percent) rather than a uniform, implausible 100 percent everywhere, matching how real detection systems perform in the published research.
-- **A live dashboard:** real-time risk scoring, a network-topology view showing which agents are touching which Network Functions, a live-replay mode, and an incident inspector that explains why each decision was made in plain language.
-- **A rigorous operating-point justification:** a full ROC and threshold-sensitivity analysis behind the chosen decision thresholds, not just a picked number.
+**The live dashboard** - real-time risk scoring, a **Live Attack Injection** panel that runs the actual generator and the actual rules+ML pipeline live against any of the seven threat scenarios (not a scripted replay), a **Before AEGIS / With AEGIS** side-by-side comparison that shows the same attack sailing straight through a credential-only check while AEGIS catches it, an animated network-topology view, a live-replay mode, and an incident inspector that explains why each decision was made in plain language.
 
-Full Gate 2 report: `docs/GATE-2.md` (also available as a Word document).
+<img src="assets/dashboard.jpg" alt="AEGIS live zero-trust gate dashboard" width="600">
+
+**Results, on a held-out test set of about 11,365 request windows:** ROC-AUC 0.965, recall 90.7%, false-positive rate 1.4%, with detection rate intentionally uneven across threats (76 to 100 percent) rather than a uniform, implausible 100 percent everywhere, matching how real detection systems perform in the published research.
+
+<img src="assets/eval.png" alt="AEGIS evaluation results: risk separation and per-threat detection" width="600">
+
+**Benchmarked against a named, reimplemented baseline, not a citation.** "State of the art" can mean anything unless you name a specific system, describe how it works, and test it on your own data. We implemented **Statistical Process Control (SPC)**, a z-score control-chart detector, the classic baseline this kind of behavioural monitoring descends from, and ran it on the identical train/test split AEGIS is evaluated on: 0.944 ROC-AUC / 63.4% recall for SPC versus 0.965 / 90.7% for AEGIS, a statistically significant gap (paired bootstrap, p = 0.015).
+
+<img src="assets/baseline_comparison.png" alt="AEGIS vs. the SPC baseline: ROC curves and per-threat detection" width="600">
+
+**A rigorous, checkable threshold justification, not just a picked number.** A threshold can only rigorously be called optimal with respect to a stated objective. Rather than an unqualified claim, we show our chosen STEP-UP threshold is Pareto-efficient (no single alternative threshold beats it on both recall and false-positive rate), sits within 0.2 percentage points of FPR of the empirical Neyman-Pearson-achievable frontier, and is consistent with a stated, sweepable cost ratio.
+
+<img src="assets/bayes_risk_threshold.png" alt="Bayes-risk-optimal threshold vs. assumed cost ratio" width="600">
+
+**Additional statistical evidence** (`reports/GATE-2/`): bootstrap confidence intervals on every headline metric, cross-validated threshold stability, a temporal (chronological, not random) train/test split robustness check, a concept-drift/stationarity check across the simulated week, and an adversarial evasion stress test showing where the current detector's blind spot is and what fixes it.
+
+Full Gate 2 report: `docs/GATE-2/GATE-2.md` (also available as a Word document in `slides/GATE-2/`).
 
 ### Next: Gate 3 - Proof of Concept (Final)
 
-The final working Proof of Concept demonstration and video, closing the remaining detection gaps, and integrating real network traffic if Fastweb/Vodafone are able to provide it.
+The final working Proof of Concept demonstration and video, closing the remaining detection gaps on the hardest threats, and extending the pipeline to real network traffic as the next validation step - the architecture is already designed to take this in without rework.
 
 ## Team
 
@@ -44,8 +64,8 @@ Fauzan Ejaz (Captain), Adithya Zacharia Valavi, Ghazanfar Anees Siddiqui, Llagam
 
 ## Where to find things
 
-- `docs/` - Gate reports, threat model, and architecture documentation
-- `slides/` - Gate presentation decks and official report submissions
-- `reports/` - evaluation charts, metrics, and the architecture diagram
+- `docs/GATE-1/`, `docs/GATE-2/` - Gate reports, presentation scripts, threat model, and architecture documentation
+- `slides/GATE-1/`, `slides/GATE-2/` - Gate presentation decks and official report submissions
+- `reports/`, `reports/GATE-1/`, `reports/GATE-2/` - evaluation charts, metrics, the architecture diagram, and the Gate 2 statistical evidence suite
 - `src/` - source code for the traffic generator, detector, and dashboard
 - `data/` - the synthetic dataset used for evaluation
