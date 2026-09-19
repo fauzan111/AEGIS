@@ -26,11 +26,16 @@ import matplotlib.pyplot as plt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCORED = os.path.join(HERE, "..", "reports", "scored_windows.csv")
+RAW_TRAFFIC = os.path.join(HERE, "..", "data", "aegis_traffic.csv")
 BADGE = os.path.join(HERE, "..", "assets", "fastweb_vodafone_badge.png")
 HERO_BG = os.path.join(HERE, "..", "assets", "hero_landscape.jpg")
 sys.path.insert(0, HERE)
-from aegis_detect import REASON_TEXT  # noqa: E402
-from generate_synthetic_traffic import AGENTS as AGENT_CFG, ALL_NFS  # noqa: E402
+from aegis_detect import (REASON_TEXT, build_windows, learn_baselines,  # noqa: E402
+                          rule_score, ml_scores, MIN_N_ROLL)
+from generate_synthetic_traffic import (AGENTS as AGENT_CFG, ALL_NFS,  # noqa: E402
+                                        inject_impersonation, inject_compromise,
+                                        inject_recon, inject_volumetric, inject_exfil,
+                                        inject_sequence, inject_scope_creep)
 
 INK, LEGIT, PASS_C, STEP_C, BLOCK_C, ACC = "#1F2A37", "#3B82C4", "#0E9384", "#E0A100", "#D1495B", "#0E9384"
 BG, PANEL, CARD, HAIR, MUTE = "#060b18", "#0c1526", "#111c33", "#1c2b45", "#93a3bd"
@@ -84,6 +89,22 @@ TRANSLATIONS = {
         "why_flagged": "Why AEGIS flagged this window:",
         "ground_truth": "Ground truth (synthetic)",
         "actual_attack": "actual attack", "false_positive": "legitimate traffic (false positive)",
+        "live_attack_title": "Live Attack Injection",
+        "live_attack_caption": "Pick a real threat scenario and launch it now - the actual generator and "
+                               "the actual rules+ML pipeline run live, scoring it in real time.",
+        "select_scenario": "Scenario", "launch_attack": "Launch live attack",
+        "injecting": "Generating live attack traffic...", "scoring_live": "Scoring with the live rules+ML pipeline...",
+        "result_pass": "PASSED - blended into normal behaviour",
+        "result_stepup": "STEP-UP - challenged for re-verification",
+        "result_block": "BLOCKED - quarantined, SOC alerted",
+        "live_agent": "Agent", "live_risk": "Risk score", "live_why": "Why AEGIS decided this:",
+        "recent_triggers": "Recent live triggers", "no_triggers_yet": "No live attacks launched yet this session.",
+        "credential_note": "This agent's credential was completely valid - the block is on behaviour, not identity.",
+        "before_title": "\U0001F513 Before AEGIS - Credential Check Only",
+        "before_result": "ALLOWED - valid credential presented",
+        "before_desc": "A stolen or misused credential is still a valid credential. Classic authentication "
+                       "checks the token, not the behaviour behind it - this exact traffic sails straight through.",
+        "after_title": "\U0001F6E1 With AEGIS",
     },
     "IT": {
         "kicker": "5G Academy 2026 &middot; Topic 2, Sicurezza &middot; Team 4",
@@ -129,6 +150,23 @@ TRANSLATIONS = {
         "why_flagged": "Perche AEGIS ha segnalato questa finestra:",
         "ground_truth": "Verita di base (sintetica)",
         "actual_attack": "attacco reale", "false_positive": "traffico legittimo (falso positivo)",
+        "live_attack_title": "Iniezione di Attacco Live",
+        "live_attack_caption": "Scegli uno scenario di minaccia reale e lancialo ora - il generatore reale e "
+                               "la pipeline regole+ML reale vengono eseguiti dal vivo, valutandolo in tempo reale.",
+        "select_scenario": "Scenario", "launch_attack": "Lancia attacco live",
+        "injecting": "Generazione traffico di attacco live...", "scoring_live": "Valutazione con la pipeline regole+ML live...",
+        "result_pass": "PASSATO - confuso nel comportamento normale",
+        "result_stepup": "STEP-UP - richiesta ri-verifica",
+        "result_block": "BLOCCATO - identita in quarantena, SOC avvisato",
+        "live_agent": "Agente", "live_risk": "Punteggio di rischio", "live_why": "Perche AEGIS ha deciso cosi:",
+        "recent_triggers": "Attacchi live recenti", "no_triggers_yet": "Nessun attacco live lanciato in questa sessione.",
+        "credential_note": "La credenziale di questo agente era completamente valida - il blocco e sul comportamento, non sull'identita.",
+        "before_title": "\U0001F513 Prima di AEGIS - Solo Controllo Credenziali",
+        "before_result": "CONSENTITO - credenziale valida presentata",
+        "before_desc": "Una credenziale rubata o usata in modo improprio e comunque una credenziale valida. "
+                       "L'autenticazione classica controlla il token, non il comportamento - questo stesso "
+                       "traffico passa dritto.",
+        "after_title": "\U0001F6E1 Con AEGIS",
     },
 }
 LANG = "EN" if st.session_state.get("lang_toggle", True) else "IT"
@@ -225,11 +263,108 @@ def explain(row):
     return reasons
 
 
-def draw_topology(view, agents_shown, highlight_row=None):
+# ------------------------------------------------------------------ live attack injection
+# Each scenario reuses the exact, already-validated injector from
+# generate_synthetic_traffic.py (same victim/attacker agent, same behaviour) -
+# the live demo runs the real generator and the real scoring pipeline, not a
+# scripted fake. (day, hour) matches each injector's own attack_window() call,
+# needed to pull matching historical context for that agent.
+ATTACK_SCENARIOS = {
+    "T1_impersonation": dict(fn=inject_impersonation, agent="nrf-heartbeat-svc", day=2, hour=14,
+                             label="T1 - Identity spoofing",
+                             desc="A valid credential for the NRF heartbeat service starts behaving like a different role."),
+    "T2_compromise": dict(fn=inject_compromise, agent="oss-inventory-job", day=3, hour=3,
+                          label="T2 - Compromised agent",
+                          desc="The inventory job drifts to new endpoints and elevated errors, inside its own scope."),
+    "T3_recon": dict(fn=inject_recon, agent="provisioning-agent", day=1, hour=11,
+                     label="T3 - Reconnaissance",
+                     desc="The provisioning agent enumerates broadly within its own authorised scope."),
+    "T4_volumetric": dict(fn=inject_volumetric, agent="closed-loop-assurance", day=4, hour=10,
+                          label="T4 - Volumetric abuse",
+                          desc="Closed-loop assurance floods session-create calls far above its normal rate."),
+    "T5_exfil": dict(fn=inject_exfil, agent="provisioning-agent", day=3, hour=1,
+                     label="T5 - Slow exfiltration",
+                     desc="The provisioning agent pulls unusually large subscriber records, off-hours."),
+    "T6_sequence": dict(fn=inject_sequence, agent="orch-session-mgr", day=2, hour=16,
+                        label="T6 - Broken sequence",
+                        desc="The session orchestrator releases/updates PDU sessions that were never created."),
+    "T7_scope_creep": dict(fn=inject_scope_creep, agent="nrf-heartbeat-svc", day=4, hour=20,
+                           label="T7 - Scope creep",
+                           desc="The NRF heartbeat service reaches into UDM, a Network Function outside its onboarded scope."),
+}
+
+
+@st.cache_resource(show_spinner=False)
+def load_live_pipeline():
+    """One-time (per app instance) fit: window the full historical traffic,
+    split legit windows the same way aegis_detect.py's main() does, and learn
+    the per-agent rule baselines. Cached so every live-attack click only pays
+    for scoring the new mini-burst, not re-fitting from 210k rows."""
+    raw = pd.read_csv(RAW_TRAFFIC)
+    raw["ts"] = pd.to_datetime(raw["ts"])
+    feat = build_windows(raw)
+    agents = sorted(feat["agent_id"].unique())
+
+    legit = feat[feat.label == "legit"].copy()
+    legit = legit.sample(frac=1.0, random_state=42).reset_index(drop=True)
+    c1, c2 = int(0.4 * len(legit)), int(0.6 * len(legit))
+    fit_legit, calib_legit = legit.iloc[:c1], legit.iloc[c1:c2]
+    base = learn_baselines(pd.concat([fit_legit, calib_legit]))
+    return raw, fit_legit, calib_legit, base, agents
+
+
+def run_live_attack(scenario_key, stepup_thresh, block_thresh):
+    """Generates the attack via the real injector, pulls real historical
+    context for that agent around the same time of day, shifts both to
+    right now so it feels live, and scores it with the real rule+ML
+    pipeline. Takes the caller's current STEP-UP/BLOCK thresholds rather than
+    the fixed defaults, so a dragged sidebar slider is honoured here too.
+    Returns the scored mini-dataframe (one row per 60s window)."""
+    raw, fit_legit, calib_legit, base, agents = load_live_pipeline()
+    scenario = ATTACK_SCENARIOS[scenario_key]
+
+    attack_rows = []
+    scenario["fn"](attack_rows)
+    attack_df = pd.DataFrame(attack_rows)
+    attack_df["ts"] = pd.to_datetime(attack_df["ts"])
+
+    now = pd.Timestamp.now()
+    shift = now - attack_df["ts"].max()
+    attack_df["ts"] = attack_df["ts"] + shift
+
+    center = attack_df["ts"].min() - shift  # original historical center, pre-shift
+    ctx = raw[(raw.agent_id == scenario["agent"]) & (raw.label == "legit") &
+              (raw.ts >= center - pd.Timedelta(minutes=15)) &
+              (raw.ts <= center + pd.Timedelta(minutes=15))].copy()
+    ctx["ts"] = ctx["ts"] + shift
+
+    combo = pd.concat([ctx, attack_df], ignore_index=True).sort_values("ts").reset_index(drop=True)
+    feat = build_windows(combo)
+    if feat.empty:
+        return None
+
+    rule_results = feat.apply(lambda r: rule_score(r, base), axis=1)
+    feat["rule"] = rule_results.apply(lambda t: t[0])
+    feat["rule_reason"] = rule_results.apply(lambda t: t[1])
+    feat["ml"] = ml_scores(fit_legit, calib_legit, feat, agents)
+    small = feat["n_roll"] < MIN_N_ROLL
+    feat["risk"] = np.where(small, feat["rule"], feat[["rule", "ml"]].max(axis=1))
+    feat["decision"] = np.where(feat["risk"] >= block_thresh, "BLOCK",
+                                np.where(feat["risk"] >= stepup_thresh, "STEP-UP", "PASS"))
+    feat["nfs_touched"] = feat["nf_set"].apply(lambda s: set(s))
+    return feat.sort_values("risk", ascending=False).reset_index(drop=True)
+
+
+def draw_topology(view, agents_shown, highlight_row=None, intensity=1.0):
     """Bipartite agent -> Network Function graph. Thin grey edges are each
     agent's authorized baseline scope; a highlighted incident's actual
     touched NFs are drawn in red, and a red-dashed edge marks a scope
-    violation (an NF outside that agent's onboarded baseline)."""
+    violation (an NF outside that agent's onboarded baseline).
+
+    `intensity` (0..1) scales the highlight's line width/marker size/alpha -
+    used to render a short pulse-in animation (thin and faint -> thick and
+    bright) across a few frames when a live attack just landed, instead of
+    only ever showing the final static state."""
     fig, ax = plt.subplots(figsize=(5.6, 3.4), dpi=130)
     agent_y = {a: i for i, a in enumerate(agents_shown)}
     nf_y = {nf: i * (len(agents_shown) - 1) / max(len(ALL_NFS) - 1, 1) for i, nf in enumerate(ALL_NFS)}
@@ -249,15 +384,19 @@ def draw_topology(view, agents_shown, highlight_row=None):
         touched = highlight_row["nfs_touched"]
         scope = set(AGENT_CFG.get(a, {}).get("scope", []))
         dc = {"BLOCK": BLOCK_C, "STEP-UP": STEP_C}.get(highlight_row["decision"], ACC)
+        k = max(0.0, min(1.0, intensity))
         if a in agent_y:
-            ax.scatter([0], [agent_y[a]], s=520, color=dc, edgecolor=INK, zorder=5, linewidths=1.5, alpha=0.85)
-        for nf in touched:
-            if nf not in nf_y:
-                continue
-            violation = nf not in scope
-            ax.plot([0, 1], [agent_y.get(a, 0), nf_y[nf]], color=dc, lw=2.4 if violation else 1.6,
-                    ls="--" if violation else "-", zorder=4)
-            ax.scatter([1], [nf_y[nf]], s=400, color=dc, edgecolor=INK, zorder=5, linewidths=1.5, alpha=0.85)
+            ax.scatter([0], [agent_y[a]], s=280 + 240 * k, color=dc, edgecolor=INK, zorder=5,
+                      linewidths=1.5, alpha=0.35 + 0.5 * k)
+            for nf in touched:
+                if nf not in nf_y:
+                    continue
+                violation = nf not in scope
+                base_lw = 2.4 if violation else 1.6
+                ax.plot([0, 1], [agent_y[a], nf_y[nf]], color=dc, lw=0.7 + base_lw * k,
+                        ls="--" if violation else "-", zorder=4, alpha=0.4 + 0.6 * k)
+                ax.scatter([1], [nf_y[nf]], s=220 + 180 * k, color=dc, edgecolor=INK, zorder=5,
+                          linewidths=1.5, alpha=0.35 + 0.5 * k)
 
     ax.set_xlim(-0.62, 1.4)
     ax.set_ylim(-0.8, max(len(agents_shown), 1) - 0.2)
@@ -369,6 +508,73 @@ st.markdown(f'<div class="kpi-row">{kpi_html}</div>', unsafe_allow_html=True)
 
 st.divider()
 
+# ------------------------------------------------------------------ live attack injection
+st.subheader(f"\U0001F534 {T['live_attack_title']}")
+st.caption(T["live_attack_caption"])
+
+if "live_triggers" not in st.session_state:
+    st.session_state.live_triggers = []
+
+lc1, lc2 = st.columns([2, 1])
+with lc1:
+    scenario_key = st.selectbox(T["select_scenario"], options=list(ATTACK_SCENARIOS.keys()),
+                                format_func=lambda k: ATTACK_SCENARIOS[k]["label"])
+    st.caption(ATTACK_SCENARIOS[scenario_key]["desc"])
+with lc2:
+    st.write("")
+    launch = st.button(f"\U0001F680 {T['launch_attack']}", use_container_width=True, type="primary")
+
+if launch:
+    progress = st.empty()
+    progress.info(f"⏳ {T['injecting']}")
+    time.sleep(0.6)
+    progress.info(f"⚙️ {T['scoring_live']}")
+    scored = run_live_attack(scenario_key, stepup, block)
+    time.sleep(0.4)
+    progress.empty()
+    if scored is not None and len(scored):
+        top = scored.iloc[0]
+        dc = {"BLOCK": BLOCK_C, "STEP-UP": STEP_C}.get(top["decision"], PASS_C)
+        result_text = {"PASS": T["result_pass"], "STEP-UP": T["result_stepup"],
+                       "BLOCK": T["result_block"]}[top["decision"]]
+
+        bcol, acol = st.columns(2)
+        with bcol:
+            st.markdown(f"#### {T['before_title']}")
+            st.success(f"✅ {T['before_result']}")
+            st.caption(T["before_desc"])
+        with acol:
+            st.markdown(f"#### {T['after_title']}")
+            st.markdown(f"### <span style='color:{dc}'>{result_text}</span>", unsafe_allow_html=True)
+
+        rc1, rc2, rc3 = st.columns(3)
+        rc1.metric(T["live_agent"], top["agent_id"])
+        rc2.metric(T["live_risk"], f"{top['risk']:.2f}")
+        rc3.metric(T["decision"], top["decision"])
+        st.markdown(f"**{T['live_why']}**")
+        for r in explain(top):
+            st.markdown(f"- {r}")
+        if top["decision"] != "PASS":
+            st.caption(f"\U0001F511 {T['credential_note']}")
+        st.session_state.live_triggers.insert(0, dict(
+            time=pd.Timestamp.now().strftime("%H:%M:%S"),
+            scenario=ATTACK_SCENARIOS[scenario_key]["label"],
+            agent=top["agent_id"], decision=top["decision"], risk=round(float(top["risk"]), 2)))
+        st.session_state.live_triggers = st.session_state.live_triggers[:8]
+        st.session_state.live_highlight = top
+        st.session_state.live_highlight_fresh = True
+    else:
+        st.warning("Could not score this scenario - no matching historical context found.")
+
+if st.session_state.live_triggers:
+    st.markdown(f"**{T['recent_triggers']}**")
+    st.dataframe(pd.DataFrame(st.session_state.live_triggers), use_container_width=True,
+                height=180, hide_index=True)
+else:
+    st.caption(T["no_triggers_yet"])
+
+st.divider()
+
 tab_overview, tab_topology, tab_inspector = st.tabs(
     [T["tab_overview"], T["tab_topology"], T["tab_inspector"]])
 
@@ -419,15 +625,33 @@ with tab_overview:
 with tab_topology:
     st.subheader(T["agents_to_nfs"])
     st.caption(T["topology_caption"])
-    incidents = view[view.decision != "PASS"].sort_values("win", ascending=False)
-    hl_row = incidents.iloc[0] if len(incidents) else None
-    fig = draw_topology(view, sel_agents, highlight_row=hl_row)
+
+    live_hl = st.session_state.get("live_highlight")
+    if live_hl is not None:
+        hl_row, hl_source = live_hl, "live"
+    else:
+        incidents = view[view.decision != "PASS"].sort_values("win", ascending=False)
+        hl_row = incidents.iloc[0] if len(incidents) else None
+        hl_source = "replay"
+
     topo_l, topo_c, topo_r = st.columns([1, 2, 1])
     with topo_c:
-        st.pyplot(fig, use_container_width=False)
+        placeholder = st.empty()
+        if hl_source == "live" and st.session_state.get("live_highlight_fresh"):
+            # a live attack just landed - pulse the edge in over a few frames
+            # instead of only ever showing the final static graph
+            for k in (0.25, 0.55, 0.85, 1.0):
+                placeholder.pyplot(draw_topology(view, sel_agents, highlight_row=hl_row, intensity=k),
+                                   use_container_width=False)
+                time.sleep(0.12)
+            st.session_state.live_highlight_fresh = False
+        else:
+            placeholder.pyplot(draw_topology(view, sel_agents, highlight_row=hl_row), use_container_width=False)
+
     if hl_row is not None:
         dc = {"BLOCK": "red", "STEP-UP": "orange"}.get(hl_row["decision"], "grey")
-        st.markdown(f"{T['most_recent_incident']}: **{hl_row['agent_id']}** at `{hl_row['win']}`, "
+        when = "just now (live attack)" if hl_source == "live" else f"`{hl_row['win']}`"
+        st.markdown(f"{T['most_recent_incident']}: **{hl_row['agent_id']}** at {when}, "
                    f"{T['decision'].lower()} :{dc}[{hl_row['decision']}], {T['touching_nfs']}: "
                    f"{', '.join(sorted(hl_row['nfs_touched'])) or 'none recorded'}.")
     else:
