@@ -20,3 +20,9 @@ slides/GATE-2/BACKUP FILES/
 *.BACKUP*.docx
 *.BACKUP*.pptx
 gate2_dump*.txt
+
+# raw source video/poster for the Gate 2 slide 13 demo clip - already
+# embedded inside AEGIS_Gate2_Official.pptx, keeping the loose 58MB .mp4
+# out of git keeps the repo from bloating with a duplicate copy
+slides/GATE-2/AEGIS_Live_Demo.mp4
+slides/GATE-2/AEGIS_Live_Demo_poster.png
