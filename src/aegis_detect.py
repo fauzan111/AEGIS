@@ -420,9 +420,9 @@ def make_figure(test, per):
     cols = [ACC if v >= 90 else ATKC for v in vals]
     b.barh(range(len(names)), vals, color=cols)
     b.set_yticks(range(len(names))); b.set_yticklabels([t.replace("_", " ") for t in names], fontsize=9)
-    b.invert_yaxis(); b.set_xlim(0, 100)
+    b.invert_yaxis(); b.set_xlim(0, 112)
     for i, v in enumerate(vals):
-        b.text(min(v+2, 96), i, f"{v:.0f}%", va="center", fontsize=8.5, color=INKC)
+        b.text(v + 2, i, f"{v:.0f}%", va="center", fontsize=10, fontweight="bold", color=INKC)
     b.set_title("Detection rate per threat", fontsize=11, color=INKC)
     b.set_xlabel("% detected")
     for sp in ["top", "right"]:
