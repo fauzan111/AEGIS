@@ -562,7 +562,6 @@ if launch:
             agent=top["agent_id"], decision=top["decision"], risk=round(float(top["risk"]), 2)))
         st.session_state.live_triggers = st.session_state.live_triggers[:8]
         st.session_state.live_highlight = top
-        st.session_state.live_highlight_fresh = True
     else:
         st.warning("Could not score this scenario - no matching historical context found.")
 
@@ -636,17 +635,11 @@ with tab_topology:
 
     topo_l, topo_c, topo_r = st.columns([1, 2, 1])
     with topo_c:
-        placeholder = st.empty()
-        if hl_source == "live" and st.session_state.get("live_highlight_fresh"):
-            # a live attack just landed - pulse the edge in over a few frames
-            # instead of only ever showing the final static graph
-            for k in (0.25, 0.55, 0.85, 1.0):
-                placeholder.pyplot(draw_topology(view, sel_agents, highlight_row=hl_row, intensity=k),
-                                   use_container_width=False)
-                time.sleep(0.12)
-            st.session_state.live_highlight_fresh = False
-        else:
-            placeholder.pyplot(draw_topology(view, sel_agents, highlight_row=hl_row), use_container_width=False)
+        # a single clean render - an earlier multi-frame "pulse" (swapping the
+        # image several times in place) caused visible flicker/blinking over
+        # the network, especially on Streamlit Cloud, so the highlight now
+        # appears once, at full intensity, with no redraw flash
+        st.pyplot(draw_topology(view, sel_agents, highlight_row=hl_row), use_container_width=False)
 
     if hl_row is not None:
         dc = {"BLOCK": "red", "STEP-UP": "orange"}.get(hl_row["decision"], "grey")
