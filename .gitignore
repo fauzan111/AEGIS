@@ -4,8 +4,14 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 
-# local Claude Code settings, not shared config
-.claude/settings.local.json
+# local Claude Code state and installed-skill tooling - not project source
+.claude/
+.agents/
+skills-lock.json
+
+# /brag skill scratch output (render thumbnails, composition build files) -
+# the actual finished deliverable is copied to slides/GATE-2/AEGIS.mp4
+brag-output/
 
 # Office lock files
 ~$*
