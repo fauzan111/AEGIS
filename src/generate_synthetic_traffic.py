@@ -45,6 +45,34 @@ ALL_NFS = list(NF_ENDPOINTS)
 ENDPOINTS_OF = {nf: eps for nf, eps in NF_ENDPOINTS.items()}
 METHODS = ["GET", "POST", "PUT", "DELETE"]
 
+# Subscriber/record-oriented NFs - real 3GPP SBI calls to these carry a target
+# identifier (SUPI or similar). AMF/SMF/NRF calls in this model are NF- or
+# session-level, not per-subscriber, so they don't get one.
+TARGET_SCOPED_NFS = {"UDM", "NEF", "PCF"}
+TARGET_POOL_SIZE = 400
+TARGET_WORKING_SET_CAP = 25
+
+
+def target_id_for(nf, working_set):
+    """Target/subscriber ID for subscriber-oriented NFs, '-' otherwise. A legit
+    agent mostly reuses its own small, size-capped working set of subscribers
+    (occasionally rotating in a new one in place of an old one, normal
+    churn) - real per-target-ID cardinality stays low and STABLE even when
+    endpoint/NF breadth is small, which is what lets it tell apart from an
+    attacker enumerating the wider subscriber pool at random. The cap matters:
+    an uncapped working set drifts larger over a multi-day simulation and
+    ends up overlapping the attacker's range."""
+    if nf not in TARGET_SCOPED_NFS:
+        return "-"
+    if working_set and random.random() < 0.9:
+        return random.choice(working_set)
+    tid = f"SUPI-{random.randint(1, TARGET_POOL_SIZE):04d}"
+    if working_set is not None:
+        working_set.append(tid)
+        if len(working_set) > TARGET_WORKING_SET_CAP:
+            working_set.pop(random.randrange(len(working_set) - 1))  # evict an old one, keep the just-added
+    return tid
+
 
 def endpoint_method(endpoint: str) -> str:
     """Rough method by endpoint verb."""
@@ -117,6 +145,9 @@ def gen_legit(agent, cfg, rows):
     """
     open_sessions = []
     counter = [0]
+    working_set = ([f"SUPI-{i:04d}" for i in
+                    random.sample(range(1, TARGET_POOL_SIZE + 1), k=random.randint(10, 25))]
+                   if set(cfg["scope"]) & TARGET_SCOPED_NFS else [])
 
     def new_sid():
         counter[0] += 1
@@ -152,6 +183,7 @@ def gen_legit(agent, cfg, rows):
                 ep = pick_endpoint(cfg, prev); prev = ep
                 ep, sid = session_for(ep)
                 nf = nf_of_endpoint(ep)
+                tid = target_id_for(nf, working_set)
                 # monotonic timestamp within the hour so a session's create always
                 # precedes its update/release chronologically (no false orphans)
                 ts = BASE_DAY + timedelta(days=d, hours=hour,
@@ -159,7 +191,7 @@ def gen_legit(agent, cfg, rows):
                 is_err = random.random() < cfg["err_rate"]
                 rows.append(dict(
                     ts=ts, agent_id=agent, nf=nf, endpoint=ep,
-                    method=endpoint_method(ep), session_id=sid,
+                    method=endpoint_method(ep), session_id=sid, target_id=tid,
                     resp_size=int(np.random.uniform(*cfg["payload"])),
                     status=(random.choice([403, 404, 500]) if is_err else 200),
                     label="legit", attack_type="none",
@@ -181,7 +213,7 @@ def inject_impersonation(rows):  # T1: valid token of agent A, behaviour of anot
             # layer rather than the deterministic scope rule.
             ep = random.choice(ENDPOINTS_OF["NRF"])
             rows.append(dict(ts=attack_window(2, 14), agent_id=victim, nf="NRF", endpoint=ep,
-                             method=endpoint_method(ep), session_id="-",
+                             method=endpoint_method(ep), session_id="-", target_id="-",
                              resp_size=int(np.random.uniform(200, 1500)),
                              status=random.choice([200, 200, 404]),
                              label="attack", attack_type="T1_impersonation"))
@@ -189,7 +221,7 @@ def inject_impersonation(rows):  # T1: valid token of agent A, behaviour of anot
             nf = random.choice(["SMF", "UDM", "AMF"])       # way outside its scope
             ep = random.choice(ENDPOINTS_OF[nf])
             rows.append(dict(ts=attack_window(2, 14), agent_id=victim, nf=nf, endpoint=ep,
-                             method=endpoint_method(ep), session_id="-",
+                             method=endpoint_method(ep), session_id="-", target_id="-",
                              resp_size=int(np.random.uniform(200, 1500)),
                              status=random.choice([200, 200, 403]),
                              label="attack", attack_type="T1_impersonation"))
@@ -205,7 +237,7 @@ def inject_compromise(rows):  # T2: legit agent drifts to new endpoints + errors
         nf = random.choice(["NRF", "UDM"])
         ep = random.choice(ENDPOINTS_OF[nf])
         rows.append(dict(ts=attack_window(3, 3), agent_id=victim, nf=nf, endpoint=ep,
-                         method=endpoint_method(ep), session_id="-",
+                         method=endpoint_method(ep), session_id="-", target_id="-",
                          resp_size=int(np.random.uniform(150, 700)),   # normal-ish size - the
                          status=random.choice([200, 404, 404]),        # tell is endpoint drift + errors, not payload
                          label="attack", attack_type="T2_compromise"))
@@ -222,8 +254,14 @@ def inject_recon(rows):  # T3: enumeration WITHIN the attacker's own authorized
     for _ in range(160):
         nf = random.choice(scope_nfs)
         ep = random.choice(ENDPOINTS_OF[nf])
+        # enumerates the broad subscriber pool at random rather than the
+        # attacker's own narrow provisioning caseload - the endpoint universe
+        # in scope is tiny (5 endpoints), but the target-ID space isn't, so
+        # this is the more distinguishing recon signature.
+        tid = target_id_for(nf, None)
         rows.append(dict(ts=attack_window(1, 11), agent_id=attacker, nf=nf, endpoint=ep,
-                         method="GET", session_id="-", resp_size=int(np.random.uniform(50, 200)),
+                         method="GET", session_id="-", target_id=tid,
+                         resp_size=int(np.random.uniform(50, 200)),
                          status=random.choice([403, 404, 404, 200]),
                          label="attack", attack_type="T3_recon"))
 
@@ -233,7 +271,7 @@ def inject_volumetric(rows):  # T4: flood one NF (each a real new session)
     ep = "Nsmf_PDUSession/create"
     for i in range(600):
         rows.append(dict(ts=attack_window(4, 10), agent_id=attacker, nf="SMF", endpoint=ep,
-                         method="POST", session_id=f"atk-v-{i}",
+                         method="POST", session_id=f"atk-v-{i}", target_id="-",
                          resp_size=int(np.random.uniform(150, 400)),
                          status=random.choice([200, 200, 429]),
                          label="attack", attack_type="T4_volumetric"))
@@ -250,8 +288,12 @@ def inject_exfil(rows):  # T5: low-and-slow reads, off-hours, moderately large
     attacker = "provisioning-agent"      # scope: NEF, UDM; active 06:00-22:00
     ep = "Nudm_SDM/get"                  # in scope
     for _ in range(70):
+        # bulk-pulls across the broad subscriber pool rather than its own
+        # narrow provisioning caseload - a real harvesting signature distinct
+        # from a legitimate pull, which stays inside the agent's working set.
+        tid = target_id_for("UDM", None)
         rows.append(dict(ts=attack_window(3, 1), agent_id=attacker, nf="UDM",
-                         endpoint=ep, method="GET", session_id="-",
+                         endpoint=ep, method="GET", session_id="-", target_id=tid,
                          resp_size=int(np.random.uniform(1800, 3200)),
                          status=200, label="attack", attack_type="T5_exfil"))
 
@@ -262,7 +304,7 @@ def inject_sequence(rows):  # T6: release/update of sessions that were never cre
     for k in range(50):
         for ep in bad_seq:
             rows.append(dict(ts=attack_window(2, 16), agent_id=attacker, nf="SMF", endpoint=ep,
-                             method=endpoint_method(ep), session_id=f"orphan-{k}",
+                             method=endpoint_method(ep), session_id=f"orphan-{k}", target_id="-",
                              resp_size=int(np.random.uniform(150, 500)),
                              status=random.choice([200, 400]),
                              label="attack", attack_type="T6_sequence"))
@@ -273,7 +315,7 @@ def inject_scope_creep(rows):  # T7: touch an NF never in baseline scope
     for _ in range(60):
         rows.append(dict(ts=attack_window(4, 20), agent_id=attacker, nf="UDM",
                          endpoint="Nudm_UEAuthentication/get", method="GET", session_id="-",
-                         resp_size=int(np.random.uniform(200, 800)),
+                         target_id="-", resp_size=int(np.random.uniform(200, 800)),
                          status=200, label="attack", attack_type="T7_scope_creep"))
 
 

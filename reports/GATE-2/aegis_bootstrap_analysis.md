@@ -8,28 +8,28 @@ Stratified bootstrap (3,000 replicates): legit and attack windows resampled sepa
 
 | Metric | Point estimate | 95% CI |
 |---|---|---|
-| ROC-AUC | 0.965 | [0.951, 0.977] |
-| Recall @ STEP-UP (0.60) | 90.7% | [87.6%, 93.5%] |
-| False-positive rate @ STEP-UP (0.60) | 1.43% | [1.21%, 1.64%] |
+| ROC-AUC | 0.970 | [0.958, 0.981] |
+| Recall @ STEP-UP (0.60) | 91.8% | [89.0%, 94.5%] |
+| False-positive rate @ STEP-UP (0.60) | 1.04% | [0.86%, 1.23%] |
 
 ## Per-threat detection rate, 95% CI
 
 | Threat | Point estimate | 95% CI | Windows |
 |---|---|---|---|
-| T1_impersonation | 96% | [90%, 100%] | 54 |
-| T2_compromise | 91% | [81%, 98%] | 43 |
-| T3_recon | 80% | [69%, 90%] | 60 |
+| T1_impersonation | 100% | [100%, 100%] | 56 |
+| T2_compromise | 78% | [67%, 89%] | 51 |
+| T3_recon | 95% | [88%, 100%] | 58 |
 | T4_volumetric | 100% | [100%, 100%] | 60 |
-| T5_exfil | 76% | [62%, 88%] | 46 |
-| T6_sequence | 93% | [85%, 98%] | 57 |
-| T7_scope_creep | 100% | [100%, 100%] | 35 |
+| T5_exfil | 80% | [68%, 91%] | 45 |
+| T6_sequence | 88% | [78%, 96%] | 56 |
+| T7_scope_creep | 100% | [100%, 100%] | 37 |
 
 Note the width of these intervals tracks sample size directly: threats with fewer windows (e.g. T7 scope creep, T5 exfil) have visibly wider CIs than T3/T4/T6 - a reminder that the point estimates alone, without this spread, overstate how precisely we know the true per-threat detection rate.
 
 ## Significance test: AEGIS vs. SPC baseline (paired bootstrap on AUC)
 
-- Observed AUC difference (AEGIS - SPC): **0.0216**
-- 95% CI on the difference: **[0.0042, 0.0401]**
-- Empirical two-sided p-value: **0.0147**
+- Observed AUC difference (AEGIS - SPC): **0.0356**
+- 95% CI on the difference: **[0.0172, 0.0557]**
+- Empirical two-sided p-value: **0.0000**
 
 The CI excludes zero, so the improvement over the SPC baseline is statistically significant at the 95% level, not attributable to sampling noise.
