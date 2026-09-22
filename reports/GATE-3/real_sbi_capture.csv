@@ -1,0 +1,11 @@
+ts,caller_nf,callee_nf,method,path,status,resp_size
+1790120461.799827,AMF,SMF,POST,/nsmf-pdusession/v1/sm-contexts/2/release,204,
+1790120461.907229,AMF,AUSF,POST,/nausf-auth/v1/ue-authentications,,
+1790120462.086946,AMF,AUSF,PUT,/nausf-auth/v1/ue-authentications/1/5g-aka-confirmation,200,144
+1790120462.151891,AMF,UDM,PUT,/nudm-uecm/v1/imsi-001011234567895/registrations/amf-3gpp-access,200,290
+1790120462.159709,AMF,UDM,GET,"/nudm-sdm/v2/imsi-001011234567895?plmn-id={""mcc"":""001"",""mnc"":""01""}&dataset-names=AM,SMF_SEL",200,263
+1790120462.172604,AMF,UDM,GET,"/nudm-sdm/v2/imsi-001011234567895/ue-context-in-smf-data?plmn-id={""mcc"":""001"",""mnc"":""01""}",200,2
+1790120462.176447,AMF,PCF,POST,/npcf-am-policy-control/v1/policies,,
+1790120462.43764,AMF,SMF,POST,/nsmf-pdusession/v1/sm-contexts,,
+1790120462.544636,SCP,AMF,POST,/namf-comm/v1/ue-contexts/imsi-001011234567895/n1-n2-messages,200,36
+1790120462.579576,AMF,SMF,POST,/nsmf-pdusession/v1/sm-contexts/3/modify,204,
