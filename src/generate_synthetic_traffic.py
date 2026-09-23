@@ -111,6 +111,19 @@ AGENTS = {
         scope=["NEF", "UDM"], rate_per_min=(2, 6), active_hours=(6, 22),
         payload=(200, 1500), err_rate=0.02,
         seq=["Nnef_ParameterProvision/update", "Nudm_SDM/subscribe"]),
+    "oss-orchestration-hub": dict(  # broad-scope integration platform - legitimately
+        # touches every NF, an edge case where the scope-violation rule has
+        # nothing left to key on (everything is "in scope" already)
+        scope=["AMF", "SMF", "NRF", "PCF", "UDM", "NEF"], rate_per_min=(15, 25),
+        active_hours=(0, 24), payload=(200, 1000), err_rate=0.01,
+        seq=["Nnrf_NFDiscovery/search", "Namf_Communication/UEContextTransfer",
+             "Nsmf_PDUSession/create", "Npcf_SMPolicyControl/create",
+             "Nudm_SDM/get", "Nnef_EventExposure/subscribe"]),
+    "policy-audit-svc": dict(  # narrow, business-hours-only policy auditor - the
+        # opposite extreme from the orchestration hub: one NF, tight hours
+        scope=["PCF"], rate_per_min=(1, 3), active_hours=(9, 17),
+        payload=(100, 400), err_rate=0.005,
+        seq=["Npcf_SMPolicyControl/create", "Npcf_PolicyAuthorization/subscribe"]),
 }
 
 BASE_DAY = datetime(2026, 8, 3, 0, 0, 0)  # a Monday
@@ -319,6 +332,71 @@ def inject_scope_creep(rows):  # T7: touch an NF never in baseline scope
                          status=200, label="attack", attack_type="T7_scope_creep"))
 
 
+# ------------------------------------------------------------------ coverage-expansion variants
+# Same seven threats, deliberately harder or differently-shaped cases, to check
+# the detectors generalise past the one hand-tuned agent/NF pairing each was
+# originally built and calibrated against.
+
+def inject_impersonation_v2(rows):  # T1 variant: impersonating a BROAD-scope agent.
+                                     # The scope-violation rule has nothing to key on here
+                                     # (oss-orchestration-hub's baseline is already all six
+                                     # NFs) - the real hub spreads its calls evenly across
+                                     # all of them, so an impersonator instead shows up as a
+                                     # role narrowing: hammering just one NF instead of the
+                                     # hub's normal broad spread. This only shows up if the
+                                     # attack actually dominates a window: the hub is active
+                                     # 24/7, so spreading 140 calls across a full hour (like
+                                     # every other injector here) just dilutes them into its
+                                     # own concurrent legit traffic - 2-3 extra AMF calls a
+                                     # minute don't move distinct_nf when ~16-19 legit calls
+                                     # across all 6 NFs are already landing in that window.
+                                     # Concentrating into a tight 4-minute burst instead means
+                                     # the attack volume actually outweighs the concurrent
+                                     # legit traffic in the windows it lands in.
+    victim = "oss-orchestration-hub"
+    ep = "Namf_Communication/UEContextTransfer"
+    burst_start = BASE_DAY + timedelta(days=2, hours=9, minutes=20)
+    for _ in range(140):
+        ts = burst_start + timedelta(seconds=random.uniform(0, 240))
+        rows.append(dict(ts=ts, agent_id=victim, nf="AMF", endpoint=ep,
+                         method=endpoint_method(ep), session_id="-", target_id="-",
+                         resp_size=int(np.random.uniform(200, 1000)),
+                         status=random.choice([200, 200, 404]),
+                         label="attack", attack_type="T1_impersonation_v2"))
+
+
+def inject_scope_creep_v2(rows):  # T7 variant: a different agent/NF pairing entirely
+                                   # (narrow single-NF baseline reaching into a totally
+                                   # different NF) - confirms the scope rule generalises
+                                   # past the one combination it was originally tuned on.
+    attacker = "policy-audit-svc"       # scope: PCF only
+    for _ in range(55):
+        ep = random.choice(ENDPOINTS_OF["NRF"])
+        rows.append(dict(ts=attack_window(1, 15), agent_id=attacker, nf="NRF", endpoint=ep,
+                         method=endpoint_method(ep), session_id="-", target_id="-",
+                         resp_size=int(np.random.uniform(150, 600)),
+                         status=200, label="attack", attack_type="T7_scope_creep_v2"))
+
+
+def inject_volumetric_slow_ramp(rows):  # T4 variant: same target/endpoint as the original
+                                         # flood, but the rate climbs gradually across a
+                                         # 30-minute window instead of jumping straight to a
+                                         # spike - a genuinely harder case for a threshold
+                                         # rule tuned around an instantaneous jump.
+    attacker = "closed-loop-assurance"
+    ep = "Nsmf_PDUSession/create"
+    base_ts = BASE_DAY + timedelta(days=4, hours=4)
+    n_total = 400
+    for i in range(n_total):
+        frac = i / n_total
+        offset = timedelta(seconds=(frac ** 2) * 1800)   # quadratic ramp: sparse -> dense
+        rows.append(dict(ts=base_ts + offset, agent_id=attacker, nf="SMF", endpoint=ep,
+                         method="POST", session_id=f"atk-ramp-{i}", target_id="-",
+                         resp_size=int(np.random.uniform(150, 400)),
+                         status=random.choice([200, 200, 429]),
+                         label="attack", attack_type="T4_volumetric_slow_ramp"))
+
+
 # ------------------------------------------------------------------ build
 def main():
     rows = []
@@ -326,7 +404,8 @@ def main():
         gen_legit(agent, cfg, rows)
 
     for inj in (inject_impersonation, inject_compromise, inject_recon,
-                inject_volumetric, inject_exfil, inject_sequence, inject_scope_creep):
+                inject_volumetric, inject_exfil, inject_sequence, inject_scope_creep,
+                inject_impersonation_v2, inject_scope_creep_v2, inject_volumetric_slow_ramp):
         inj(rows)
 
     df = pd.DataFrame(rows).sort_values("ts").reset_index(drop=True)
