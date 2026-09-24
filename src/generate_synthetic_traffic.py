@@ -30,16 +30,26 @@ DATA_DIR = os.path.join(HERE, "..", "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 # ------------------------------------------------------------------ 5G SBA surface
-# Network Functions and a few representative SBI endpoints each (Nnf_Service style).
+# Network Functions and representative SBI endpoints each (Nnf_Service style),
+# drawn from the real 3GPP service catalogue per NF (TS 29.518 AMF, TS 29.502
+# SMF, TS 29.510 NRF, TS 29.507/512/514 PCF, TS 29.503 UDM, TS 29.522 NEF) -
+# a wider, more representative slice of each NF's real surface than a
+# simplified 2-3-endpoint model, not just the handful needed for the T1-T7
+# story to work.
 NF_ENDPOINTS = {
     "AMF": ["Namf_Communication/UEContextTransfer", "Namf_EventExposure/subscribe",
-            "Namf_MT/EnableUEReachability"],
-    "SMF": ["Nsmf_PDUSession/create", "Nsmf_PDUSession/update", "Nsmf_PDUSession/release"],
+            "Namf_MT/EnableUEReachability", "Namf_Communication/N1N2MessageTransfer",
+            "Namf_Location/ProvidePositioningInfo"],
+    "SMF": ["Nsmf_PDUSession/create", "Nsmf_PDUSession/update", "Nsmf_PDUSession/release",
+            "Nsmf_EventExposure/subscribe"],
     "NRF": ["Nnrf_NFManagement/register", "Nnrf_NFDiscovery/search",
-            "Nnrf_NFManagement/heartbeat"],
-    "PCF": ["Npcf_SMPolicyControl/create", "Npcf_PolicyAuthorization/subscribe"],
-    "UDM": ["Nudm_SDM/get", "Nudm_UEAuthentication/get", "Nudm_SDM/subscribe"],
-    "NEF": ["Nnef_EventExposure/subscribe", "Nnef_ParameterProvision/update"],
+            "Nnrf_NFManagement/heartbeat", "Nnrf_AccessToken/get"],
+    "PCF": ["Npcf_SMPolicyControl/create", "Npcf_PolicyAuthorization/subscribe",
+            "Npcf_AMPolicyControl/create", "Npcf_UEPolicyControl/update"],
+    "UDM": ["Nudm_SDM/get", "Nudm_UEAuthentication/get", "Nudm_SDM/subscribe",
+            "Nudm_UEContextManagement/registration", "Nudm_EventExposure/subscribe"],
+    "NEF": ["Nnef_EventExposure/subscribe", "Nnef_ParameterProvision/update",
+            "Nnef_PFDManagement/create", "Nnef_MonitoringEvent/subscribe"],
 }
 ALL_NFS = list(NF_ENDPOINTS)
 ENDPOINTS_OF = {nf: eps for nf, eps in NF_ENDPOINTS.items()}
