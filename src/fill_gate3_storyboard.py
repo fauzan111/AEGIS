@@ -187,8 +187,7 @@ def main():
     team_tb = team_slide.shapes.add_textbox(Emu(600000), Emu(2800000), Emu(9000000), Emu(2000000))
     tf = team_tb.text_frame
     tf.word_wrap = True
-    for i, name in enumerate(["Fauzan Ejaz (Captain)", "Adithya Zacharia Valavi",
-                              "Ghazanfar Anees Siddiqui", "Llagami Tedi"]):
+    for i, name in enumerate(["Fauzan Ejaz (Captain)", "Llagami Tedi"]):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         r = p.add_run(); r.text = name
         r.font.size = Pt(20); r.font.name = FONT; r.font.color.rgb = INK
