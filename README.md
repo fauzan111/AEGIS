@@ -54,7 +54,7 @@ Still to come: the final demo video and the Gate 3 report/deck.
 
 ## Team
 
-Fauzan Ejaz (Captain), Adithya Zacharia Valavi, Ghazanfar Anees Siddiqui, Llagami Tedi
+Fauzan Ejaz (Captain), Llagami Tedi
 
 ## Where to find things
 
