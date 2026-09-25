@@ -32,3 +32,10 @@ gate2_dump*.txt
 # out of git keeps the repo from bloating with a duplicate copy
 slides/GATE-2/AEGIS_Live_Demo.mp4
 slides/GATE-2/AEGIS_Live_Demo_poster.png
+
+# 5G Academy program materials marked privileged/confidential on the
+# document itself - not ours to publish on a public repo. Our own filled-in
+# storyboard (built from the template but containing our own content) stays
+# tracked; the raw template and the kickoff deck do not.
+slides/KickOff2026_students.pdf
+slides/STORYBOARD Template/
