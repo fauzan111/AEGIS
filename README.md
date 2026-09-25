@@ -38,9 +38,19 @@ Delivered the full technical solution: a concrete system architecture, a working
 
 Full Gate 2 report: `docs/GATE-2/GATE-2.md` (also available as a Word document in `slides/GATE-2/`).
 
-### Next: Gate 3 - Proof of Concept (Final)
+### Gate 3 - Proof of Concept (in progress)
 
-The final working Proof of Concept demonstration and video, closing the remaining detection gaps on the hardest threats, and extending the pipeline to real network traffic as the next validation step - the architecture is already designed to take this in without rework.
+Closing the detection gaps flagged at Gate 2, extending validation to a real 5G core instead of only synthetic traffic, and widening the threat/agent catalogue to stress-test generalisation - the technical work here is complete; the final demo video and Gate 3 report/deck are still in progress.
+
+- **Hardened the two weakest threats.** Added a per-target-ID cardinality feature (rolling distinct-subscriber-ID tracking, both a new rule and a new ML feature) since the in-scope endpoint universe alone was too small to separate legitimate diversity from actual reconnaissance. Recon detection 80% -> 95%, exfiltration 76% -> 80%, bootstrap-validated.
+- **Validated against a real 5G core, not just synthetic traffic.** Stood up an actual Open5GS 5G SA core plus a UERANSIM UE (kept as separate infrastructure, not vendored into this repo), got a genuine registration and PDU session established, and captured real HTTP/2 SBI signalling. Confirmed the synthetic generator's endpoint-naming convention matches real captured 3GPP service calls almost exactly, then went further: ran real attack-like traffic through AEGIS's actual, unmodified detection code and confirmed it correctly flags real behaviour, not just synthetic behaviour. Full runbook and results: `docs/GATE-3/real-traffic-capture.md`.
+- **Widened the agent and attack catalogue** from 5 agents/7 threats to 7 agents/10 threat variants, including two deliberately extreme agent profiles (one with legitimate access to every Network Function, one restricted to a single NF) and three harder attack variants. Found and fixed a real bug along the way: one new attack variant scored 0% detected, not because the behaviour was undetectable but because of how the attack's timing diluted it into a busy agent's own concurrent legitimate traffic - fixing the attack's construction (not the detector) took it to 100%.
+- **Grounded the NF endpoint catalogue in real 3GPP specifications** (TS 29.518, 29.502, 29.510, 29.507/512/514, 29.503, 29.522), widening each Network Function's modelled surface from 2-3 endpoints to a more representative slice of what it actually exposes.
+- **Mapped the seven threats against MITRE FiGHT and GSMA/ENISA's public 5G security guidance**, with verified citations. Five of seven threats match named, externally recognised attacker techniques; two have no match in either framework, stated plainly as AEGIS's own behavioural contributions rather than forced into a fit. Full mapping: `docs/GATE-3/threat-model-external-mapping.md`.
+
+Full-catalogue results after all of the above: ROC-AUC 0.979, recall 91.6%, false-positive rate 1.44% (within the ~1.5% design budget), across 7 agents and 10 attack variants.
+
+Still to come: the final demo video and the Gate 3 report/deck.
 
 ## Team
 
@@ -48,8 +58,8 @@ Fauzan Ejaz (Captain), Adithya Zacharia Valavi, Ghazanfar Anees Siddiqui, Llagam
 
 ## Where to find things
 
-- `docs/GATE-1/`, `docs/GATE-2/` - Gate reports, presentation scripts, threat model, and architecture documentation
+- `docs/GATE-1/`, `docs/GATE-2/`, `docs/GATE-3/` - Gate reports, presentation scripts, threat model, architecture documentation, the real-traffic-capture runbook, and the FiGHT/GSMA threat-model mapping
 - `slides/GATE-1/`, `slides/GATE-2/` - Gate presentation decks and official report submissions
-- `reports/`, `reports/GATE-1/`, `reports/GATE-2/` - evaluation charts, metrics, the architecture diagram, and the Gate 2 statistical evidence suite
-- `src/` - source code for the traffic generator, detector, and dashboard
+- `reports/`, `reports/GATE-1/`, `reports/GATE-2/`, `reports/GATE-3/` - evaluation charts, metrics, the architecture diagram, the Gate 2 statistical evidence suite, and the real-traffic capture results
+- `src/` - source code for the traffic generator, detector, dashboard, and the real-traffic capture/validation scripts
 - `data/` - the synthetic dataset used for evaluation
