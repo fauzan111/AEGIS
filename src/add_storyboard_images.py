@@ -57,6 +57,7 @@ IMAGE_PLACEMENTS = {
     (4, 0): os.path.join(ASSETS, "architecture.png"),                        # architecture full reveal
     (5, 0): os.path.join(ASSETS, "dashboard.jpg"),                           # dashboard home / live overview
     (5, 5): os.path.join(REPORTS, "aegis_eval.png"),                         # before/after-style detection chart
+    (6, 0): os.path.join(REPORTS, "GATE-3", "storyboard-shots", "open5gs_terminal.png"),  # real UE registration log
     (6, 5): os.path.join(REPORTS, "aegis_eval.png"),                         # stat card / results overlay
 }
 
