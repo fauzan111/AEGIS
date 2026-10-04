@@ -1,0 +1,17 @@
+# Local Terraform working-directory artifacts — never commit these.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# The bootstrap config is the one exception that deliberately keeps local
+# state (see bootstrap/versions.tf). Still don't commit the state file
+# itself — if it's lost, re-import the bucket or recreate it; the bucket
+# has prevent_destroy set so the data survives either way.
