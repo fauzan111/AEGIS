@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>AEGIS — Real SBI Capture</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #060b18;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #060b18;
+        font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #f2f6fb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .scene-glow {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 46%, rgba(34, 195, 230, 0.14), rgba(6, 11, 24, 0) 58%);
+        z-index: 0;
+      }
+      .term-wrap {
+        position: relative;
+        z-index: 1;
+        width: 1640px;
+        background: #0c1526;
+        border: 1px solid #1c2b45;
+        border-radius: 18px;
+        box-shadow: 0 40px 120px rgba(0, 0, 0, 0.45);
+        overflow: hidden;
+      }
+      .term-titlebar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 18px 26px;
+        border-bottom: 1px solid #1c2b45;
+      }
+      .term-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #3d67b1;
+      }
+      .term-filename {
+        font-family: "Courier New", monospace;
+        font-size: 18px;
+        color: #93a3bd;
+        margin-left: 10px;
+      }
+      .term-body {
+        padding: 24px 26px 30px;
+        font-family: "Courier New", monospace;
+        font-size: 18px;
+        line-height: 1.9;
+      }
+      .term-header {
+        color: #6f93d1;
+        font-weight: 700;
+      }
+      .term-row {
+        display: flex;
+        gap: 22px;
+        opacity: 0;
+      }
+      .term-row .c-ts {
+        color: #8391a8;
+        width: 150px;
+      }
+      .term-row .c-nf {
+        color: #22c3e6;
+        font-weight: 700;
+        width: 190px;
+      }
+      .term-row .c-method {
+        color: #16b3a0;
+        width: 60px;
+      }
+      .term-row .c-path {
+        color: #f2f6fb;
+        flex: 1;
+      }
+      .term-row .c-status {
+        color: #93a3bd;
+        width: 50px;
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1920" data-height="1080" data-duration="4.5">
+      <div class="scene-glow"></div>
+      <div class="term-wrap">
+        <div class="term-titlebar">
+          <div class="term-dot"></div>
+          <div class="term-dot"></div>
+          <div class="term-dot"></div>
+          <div class="term-filename">real_sbi_capture.csv &mdash; captured from a live Open5GS core</div>
+        </div>
+        <div class="term-body">
+          <div class="term-row term-header" style="opacity: 1">
+            <span class="c-ts">ts</span><span class="c-nf">caller &rarr; callee</span><span class="c-method">method</span
+            ><span class="c-path">path</span><span class="c-status">status</span>
+          </div>
+          <div class="term-row" id="r1"><span class="c-ts">...461.79</span><span class="c-nf">AMF &rarr; SMF</span><span class="c-method">POST</span><span class="c-path">/nsmf-pdusession/v1/sm-contexts/2/release</span><span class="c-status">204</span></div>
+          <div class="term-row" id="r2"><span class="c-ts">...461.90</span><span class="c-nf">AMF &rarr; AUSF</span><span class="c-method">POST</span><span class="c-path">/nausf-auth/v1/ue-authentications</span><span class="c-status">&mdash;</span></div>
+          <div class="term-row" id="r3"><span class="c-ts">...462.08</span><span class="c-nf">AMF &rarr; AUSF</span><span class="c-method">PUT</span><span class="c-path">/nausf-auth/v1/.../5g-aka-confirmation</span><span class="c-status">200</span></div>
+          <div class="term-row" id="r4"><span class="c-ts">...462.15</span><span class="c-nf">AMF &rarr; UDM</span><span class="c-method">PUT</span><span class="c-path">/nudm-uecm/v1/imsi-.../registrations/amf-3gpp-access</span><span class="c-status">200</span></div>
+          <div class="term-row" id="r5"><span class="c-ts">...462.17</span><span class="c-nf">AMF &rarr; PCF</span><span class="c-method">POST</span><span class="c-path">/npcf-am-policy-control/v1/policies</span><span class="c-status">&mdash;</span></div>
+          <div class="term-row" id="r6"><span class="c-ts">...462.54</span><span class="c-nf">SCP &rarr; AMF</span><span class="c-method">POST</span><span class="c-path">/namf-comm/v1/ue-contexts/imsi-.../n1-n2-messages</span><span class="c-status">200</span></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo(".term-wrap", { opacity: 0, y: 18, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "power2.out" }, 0.1);
+      const rows = ["#r1", "#r2", "#r3", "#r4", "#r5", "#r6"];
+      rows.forEach((sel, i) => {
+        tl.fromTo(sel, { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.22, ease: "power1.out" }, 0.55 + i * 0.22);
+      });
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
