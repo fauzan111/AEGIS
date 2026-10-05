@@ -10,7 +10,6 @@ provider "aws" {
   }
 }
 
-# VPC, EKS, ECR, S3 data buckets, and IAM roles land here in Phase 1
-# (see docs/AWS-MVP/implementation-plan.md). This file intentionally
-# stops at the provider block until that phase starts — Phase 0's job
-# was tooling and structure, not resources.
+# VPC: vpc.tf · EKS: eks.tf · ECR: ecr.tf · S3: s3.tf · IRSA roles: iam.tf
+# K8s namespaces: namespaces.tf · kubernetes provider: k8s-provider.tf
+# (see docs/AWS-MVP/implementation-plan.md for the phase this belongs to)

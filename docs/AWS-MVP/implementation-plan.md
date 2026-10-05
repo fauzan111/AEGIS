@@ -12,19 +12,20 @@ Four open questions are already out to the tutor (account/billing ownership, Bed
 - [x] Noted for Phase 1: `terraform-aws-modules/eks/aws` v21 is the current standard EKS module — its API renamed `cluster_name`→`name`, dropped the old `aws-auth` ConfigMap for access-entry auth. Don't follow older v19/v20 tutorials when writing Phase 1.
 - [ ] *(Deploy-time only, waits on his answer)* Confirm AWS account access: who has console/CLI credentials, personal account, team account, or AWS Educate/sponsored credits — needed before `bootstrap`'s `terraform apply` can actually run
 
-## Phase 1 — AWS foundation (Terraform)
+## Phase 1 — AWS foundation (Terraform) ✅ written + reviewed 2026-10-06
 
-**Write and validate now** (`terraform init`/`validate`/`plan` don't need a live account, or can run against anyone's personal sandbox account for syntax/logic testing):
+**Written and validated** (`infra/terraform/environments/demo/`, passes `terraform validate`, reviewed by the `iac-reviewer` agent — one blocker and two high findings caught and fixed, see `infra/terraform/README.md`):
 
-- [ ] VPC `10.0.0.0/16`, single AZ, public + private subnets
-- [ ] Internet Gateway (public subnet) + NAT Gateway (egress-only from private subnet)
-- [ ] EKS cluster `aegis-mvp` + managed node group (2× `m5.xlarge`, on-demand)
-- [ ] ECR repositories for pinned images (Open5GS, UERANSIM, AEGIS gate, capture job)
-- [ ] S3 bucket(s) for pcap/CSV/scored-windows, 7-day lifecycle expiry
-- [ ] IAM roles: IRSA for the capture Job (`s3:PutObject` only) and the AEGIS gate pod (`s3:GetObject`/`PutObject`); a separate AgentCore role (`bedrock:InvokeModel` scoped to one model ARN)
-- [ ] Kubernetes namespaces: `ueransim`, `open5gs`, `aegis`
+- [x] VPC `10.0.0.0/16`, single AZ, public + private subnets (`vpc.tf`, `terraform-aws-modules/vpc/aws` v6.7.3)
+- [x] Internet Gateway (public subnet) + NAT Gateway (egress-only from private subnet) — the module defaults handle both
+- [x] EKS cluster `aegis-mvp` + managed node group (2× `m5.xlarge`, on-demand) (`eks.tf`, `terraform-aws-modules/eks/aws` v21.26.0)
+- [x] ECR repositories for pinned images (Open5GS, UERANSIM, AEGIS gate, capture job) (`ecr.tf`)
+- [x] S3 bucket for pcap/CSV/scored-windows, 7-day lifecycle expiry (`s3.tf`)
+- [x] IAM roles: IRSA for the capture Job (`s3:PutObject` only) and the AEGIS gate pod (`s3:GetObject`/`PutObject`/`ListBucket`) (`iam.tf`)
+- [x] Kubernetes namespaces: `ueransim`, `open5gs`, `aegis` (`namespaces.tf`)
+- [ ] *Deferred to Phase 5, not forgotten:* the separate AgentCore role (`bedrock:InvokeModel` scoped to one model ARN) — AgentCore isn't an EKS workload so it doesn't use IRSA the same way; its trust-policy pattern needs its own research when Phase 5 starts
 
-**Deploy-time only:** `terraform apply` against the real account — waits on account access.
+**Deploy-time only:** `terraform apply` against the real account — waits on account access, and on setting `eks_public_access_cidrs` to a real IP (checked-in default is a deliberately invalid placeholder, not `0.0.0.0/0`).
 
 ## Phase 2 — Lift-and-shift the existing stack into Helm charts
 
