@@ -1,0 +1,27 @@
+# Overrides for gradiant/ueransim-gnb chart v0.2.6 (app v3.2.6). See
+# infra/helm/ueransim/README.md for the install command.
+#
+# This chart can optionally also deploy UE pods itself (the `ues:`
+# block below) — left disabled because we use the separate
+# ueransim-ues chart instead (values-ues.yaml), matching the HLD's
+# diagram which draws "UE (UERANSIM)" and "UERANSIM gNB" as two
+# separate boxes.
+ues:
+  enabled: false
+
+# amf.hostname default is "open5gs-amf-ngap" — this already matches
+# as long as the Open5GS chart is installed with release name
+# "open5gs" (see infra/helm/open5gs/README.md's install command). If
+# that release name ever changes, this needs an explicit override to
+# match it.
+
+# mcc/mnc override the chart's generic test PLMN (999/70) — must match
+# the existing subscriber's actual home PLMN. Confirmed directly from
+# the real captured traffic (reports/GATE-3/real_sbi_capture.csv,
+# UDM query paths carry plmn-id={"mcc":"001","mnc":"01"}), not
+# assumed from the IMSI's leading digits alone.
+mcc: "001"
+mnc: "01"
+sst: 1
+sd: "0x111111"
+tac: "0001"

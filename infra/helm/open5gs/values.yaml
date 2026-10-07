@@ -1,0 +1,61 @@
+# Overrides for gradiant/open5gs chart v2.3.8 (app v2.7.5). See
+# infra/helm/open5gs/README.md for the exact install command and chart
+# coordinates — this file is intentionally values-only.
+#
+# The chart's own default enables BOTH the 4G/EPC components (hss, mme,
+# pcrf, sgwc, sgwu) and the 5G/NGC ones. The HLD and the existing Docker
+# Compose testbed are both 5G SA only — disable everything 4G, plus
+# sepp (inter-PLMN roaming, not needed for a single demo core).
+
+hss:
+  enabled: false
+mme:
+  enabled: false
+pcrf:
+  enabled: false
+sgwc:
+  enabled: false
+sgwu:
+  enabled: false
+sepp:
+  enabled: false
+
+# Everything below is left at the chart's default (true) — this is the
+# full 5G SA set matching the HLD's NF list: NRF, AUSF, UDM, PCF, NSSF,
+# AMF, SMF, UDR, BSF, SCP, UPF, MongoDB, WebUI.
+#
+# amf.enabled: true (default)
+# ausf.enabled: true (default)
+# bsf.enabled: true (default)
+# nrf.enabled: true (default)
+# nssf.enabled: true (default)
+# pcf.enabled: true (default)
+# scp.enabled: true (default)
+# smf.enabled: true (default)
+# udm.enabled: true (default)
+# udr.enabled: true (default)
+# upf.enabled: true (default)
+# webui.enabled: true (default)
+# mongodb.enabled: true (default) — needs the EBS CSI driver +
+#   gp3 default StorageClass from infra/terraform/environments/demo
+#   (ebs-csi.tf) to actually bind its PVC; without those the Mongo
+#   pod sits Pending forever.
+
+# The webui subchart defaults ingress.enabled: true, pointed at a
+# Gradiant demo domain we don't own (lab5g.gradiant.org) and have no
+# ingress controller for anyway — the HLD exposes the AEGIS gate's
+# own dashboard via CloudFront+ALB (Phase 4), not Open5GS's WebUI.
+# Disabled to avoid deploying a dangling, unsatisfiable Ingress
+# resource. Confirmed via `helm show values` on the webui subchart
+# directly, not guessed.
+webui:
+  ingress:
+    enabled: false
+
+# Subscriber provisioning: deliberately NOT hardcoded here. See
+# infra/k8s/subscriber-secret.yaml and infra/helm/open5gs/README.md —
+# the actual `populate.initCommands` value gets built at install time
+# from that Secret's decoded values, not committed to this file.
+populate:
+  enabled: true
+  initCommands: [] # filled in at install time, see README

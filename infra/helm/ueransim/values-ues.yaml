@@ -1,0 +1,32 @@
+# Overrides for gradiant/ueransim-ues chart v0.1.2 (app v3.2.6). See
+# infra/helm/ueransim/README.md for the install command.
+#
+# mcc/mnc/key/op are deliberately NOT hardcoded here — they come from
+# the same Kubernetes Secret as the Open5GS populate step
+# (infra/k8s/subscriber-secret.yaml), passed via --set at install
+# time, so the UE's credentials and the subscriber actually
+# provisioned in Open5GS's MongoDB can never drift apart by editing
+# one file and forgetting the other.
+
+gnb:
+  hostname: ueransim-gnb # matches the gNB chart's own release/service name
+
+# containerSecurityContext.enabled defaults to FALSE in this chart —
+# confirmed directly from the pulled chart's values.yaml and
+# templates/ues-deployment.yaml. Without it, the simulated UE
+# attaches and authenticates (control-plane signalling works) but
+# can't actually bring up its own TUN device for user-plane traffic.
+# The HLD explicitly wants a real PDU session established (matching
+# what's already proven on the local Docker Compose testbed), so
+# this needs to be on, which is also why the `ueransim` namespace is
+# labeled at the `privileged` Pod Security Standard.
+containerSecurityContext:
+  enabled: true
+
+apnList:
+  - type: "IPv4"
+    apn: "internet"
+    slice:
+      sst: 1
+      sd: "0x111111"
+    emergency: false

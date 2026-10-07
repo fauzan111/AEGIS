@@ -30,6 +30,7 @@ Two separate Terraform configs, not one, because of a chicken-and-egg problem: t
 | Helm | 4.3.0 | Helm 3 is maintenance-only; 4 is current. |
 | AWS CLI | 2.37.9 | Latest v2 line. |
 | eksctl | 0.230.0 | Only used for occasional one-off cluster inspection/debugging — Terraform (via the EKS module) is what actually provisions the cluster, not eksctl. |
+| `terraform-aws-modules/eks-pod-identity/aws` | `~> 2.9` | Added in Phase 2 for the `aws-ebs-csi-driver` addon's IAM role. This is EKS Pod Identity, not IRSA, a separate, newer mechanism the v21 EKS module uses for addon-level roles specifically. The two AEGIS workload roles in `iam.tf` stay on classic IRSA; only the addon role uses this. |
 
 All four CLI tools were installed via `winget` on this machine. If you're setting up a second machine: `winget install Hashicorp.Terraform`, `winget install Helm.Helm`, `winget install Amazon.AWSCLI`, `winget install eksctl.eksctl`.
 
@@ -73,12 +74,22 @@ terraform destroy
 
 Don't run `terraform destroy` in `bootstrap/` casually — that deletes the state bucket for every other environment. It has `prevent_destroy = true` set specifically so that doesn't happen by accident.
 
+## Phase 2 addition: EBS CSI driver, Pod Identity, and privileged namespaces
+
+A gap surfaced while writing Phase 2's Helm charts, not caught during Phase 1 itself: the Open5GS chart bundles a MongoDB subchart that needs a PersistentVolumeClaim to bind, and Phase 1 never provisioned anything that could satisfy one. Three files close that gap:
+
+- `eks.tf`, added an `addons` block: `coredns`, `kube-proxy`, `vpc-cni`, and `aws-ebs-csi-driver` (wired to a Pod Identity association, see below). Without the EBS CSI driver, MongoDB's pod sits `Pending` forever.
+- `ebs-csi.tf` (new), `module.ebs_csi_pod_identity` grants the EBS CSI driver's IAM role via **EKS Pod Identity**, not IRSA, a separate, newer AWS mechanism the v21 EKS module uses for addon-level roles. It also creates a standalone `aws_eks_addon.pod_identity_agent` resource (the `eks-pod-identity-agent` DaemonSet addon) and a `gp3` default `StorageClass`. The standalone addon resource exists specifically to avoid a dependency cycle: `eks.tf`'s `aws-ebs-csi-driver` entry needs `ebs_csi_pod_identity`'s role ARN, so `ebs_csi_pod_identity` can't also depend on anything read back through `module.eks`'s own addons map without Terraform rejecting it as circular (confirmed directly via `terraform validate`, not assumed).
+- `namespaces.tf`, labels all three namespaces with the `privileged` Pod Security Standard. Required because Open5GS's UPF and UERANSIM's UE pods both need `privileged: true` + `NET_ADMIN` for their TUN devices (confirmed directly from the pulled charts' own `values.yaml`, not assumed). Reviewed and accepted as a demo-scoped trade-off: it's broader than strictly necessary (it also covers non-privileged NFs sharing those namespaces), with a narrower namespace-split option flagged for the Phase 6 security pass rather than blocking Phase 2 on it now.
+
+All three were reviewed by the `iac-reviewer` agent, which caught a real ordering bug in the first draft (the EBS CSI driver's Pod Identity association could get created before the `eks-pod-identity-agent` addon was active, since nothing enforced that order), fixed via the explicit `depends_on` chain described above.
+
 ## What's NOT here yet
 
 Phase 1 covers the VPC, EKS cluster, ECR repos, S3 data bucket, and two IRSA roles (capture Job, AEGIS gate). **Not** in Phase 1, deliberately deferred:
 
 - The Bedrock AgentCore IAM role from the HLD — AgentCore isn't an EKS workload, so it doesn't use IRSA the same way, and its exact trust-policy pattern needs its own research when Phase 5 starts.
-- The actual Open5GS/UERANSIM/AEGIS-gate Helm charts and container images (Phase 2) — the namespaces and ECR repos exist, nothing's deployed into them yet.
+- The actual Open5GS/UERANSIM/AEGIS-gate Helm charts and container images (Phase 2) — see `infra/helm/` and `infra/k8s/`, in progress.
 - CloudFront, WAF, the internal ALB/NLB (Phase 4).
 
 Both Terraform configs pass `terraform validate` and were reviewed by the `iac-reviewer` agent before being considered done. Phase 1's review caught and fixed: the EKS module's own default (`endpoint_public_access = false`) would have broken `apply` itself (the namespace resources and kubectl both need to reach the API server from outside the VPC), and the S3 bucket / ECR repos needed `force_destroy`/`force_delete` or `terraform destroy` would fail with `BucketNotEmpty`/`RepositoryNotEmptyException` on every teardown.

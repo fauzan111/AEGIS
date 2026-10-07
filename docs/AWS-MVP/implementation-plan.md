@@ -27,15 +27,16 @@ Four open questions are already out to the tutor (account/billing ownership, Bed
 
 **Deploy-time only:** `terraform apply` against the real account — waits on account access, and on setting `eks_public_access_cidrs` to a real IP (checked-in default is a deliberately invalid placeholder, not `0.0.0.0/0`).
 
-## Phase 2 — Lift-and-shift the existing stack into Helm charts
+## Phase 2 — Lift-and-shift the existing stack into Helm charts (in progress)
 
 Mostly translation work — you already have this running in Docker Compose (`docs/GATE-3/real-traffic-capture.md`).
 
-- [ ] Open5GS Helm chart: NRF, SCP, AUSF, UDR, UDM, SMF, UPF, AMF, PCF, BSF, NSSF, WebUI, MongoDB (on EBS volume) — check for an existing community chart before writing one from scratch
-- [ ] UERANSIM Helm chart: UE + gNB
+- [x] Open5GS Helm chart: found and adopted Gradiant's community chart (`oci://registry-1.docker.io/gradiantcharts/open5gs` v2.3.8) rather than writing one from scratch. Disabled the 4G/EPC components and `sepp` (HLD is 5G SA only), disabled the WebUI's default Ingress (pointed at a Gradiant demo domain we don't own), left `populate.initCommands` to be filled in at install time from the subscriber Secret. `infra/helm/open5gs/`.
+- [x] UERANSIM Helm chart: two separate Gradiant charts matching the HLD's two boxes, `ueransim-gnb` v0.2.6 and `ueransim-ues` v0.1.2 (confirmed genuinely different versions, not a typo). PLMN overridden to `mcc=001`/`mnc=01` to match the real captured subscriber traffic, not left at the chart's generic test PLMN. `infra/helm/ueransim/`.
+- [x] Synthetic subscriber K/OP values in a namespaced Kubernetes Secret, never real SIM data (matches the existing privacy-safe pattern already documented in `docs/GATE-3/real-vs-synthetic-dashboard-implications.md`). `infra/k8s/subscriber-secret.yaml`, same IMSI/K/OP already used in the local Docker Compose setup.
+- [x] *(Discovered mid-phase, not in the original Phase 1 writeup)* EBS CSI driver + EKS Pod Identity + `gp3` default StorageClass, since Open5GS's bundled MongoDB needs a PVC to bind and Phase 1 never provisioned this. Namespaces also relabeled to the `privileged` Pod Security Standard, since the UPF and UE pods both need `privileged: true` + `NET_ADMIN` for their TUN devices. See `infra/terraform/README.md`'s "Phase 2 addition" section. Reviewed by `iac-reviewer`, which caught and fixed a real addon-ordering bug.
 - [ ] Dockerfile + Helm chart for the AEGIS gate (wraps `src/aegis_detect.py` + the Streamlit dashboard)
 - [ ] Kubernetes Job manifest for the SBI capture & parse step — pinned to the SCP node, host network, runs `tcpdump` on `:7777` and feeds `src/parse_real_sbi_capture.py` (same logic as the manual runbook, now automated)
-- [ ] Synthetic subscriber K/OP values in a namespaced Kubernetes Secret — never real SIM data (matches the existing privacy-safe pattern already documented in `docs/GATE-3/real-vs-synthetic-dashboard-implications.md`)
 
 ## Phase 3 — Data pipeline wiring
 

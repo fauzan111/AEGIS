@@ -33,6 +33,36 @@ module "eks" {
   # this is "IAM roles (IRSA + AgentCore)".
   enable_irsa = true
 
+  # Phase 2's Open5GS Helm chart bundles MongoDB, which wants a PVC —
+  # needs the EBS CSI driver addon. That addon's own IAM role uses EKS
+  # Pod Identity, not IRSA (ebs-csi.tf) — IRSA above is specifically
+  # for the HLD's own AEGIS workloads, this is a separate, newer
+  # mechanism for the addon itself; the two aren't in conflict.
+  #
+  # eks-pod-identity-agent is deliberately NOT in this map, it's a
+  # standalone aws_eks_addon resource in ebs-csi.tf instead. Putting it
+  # here created a real dependency cycle: this map's aws-ebs-csi-driver
+  # entry needs module.ebs_csi_pod_identity's role_arn, so
+  # module.ebs_csi_pod_identity can't also depend_on anything read back
+  # through this module's own merged cluster_addons output (confirmed
+  # by `terraform validate` rejecting exactly that shape). A standalone
+  # resource breaks the cycle while still letting
+  # module.ebs_csi_pod_identity depend_on it explicitly, so the Pod
+  # Identity Agent DaemonSet is ACTIVE before the EBS CSI driver's
+  # association is wired up.
+  addons = {
+    coredns    = {}
+    kube-proxy = {}
+    vpc-cni    = { before_compute = true }
+
+    aws-ebs-csi-driver = {
+      pod_identity_association = [{
+        role_arn        = module.ebs_csi_pod_identity.iam_role_arn
+        service_account = "ebs-csi-controller-sa"
+      }]
+    }
+  }
+
   eks_managed_node_groups = {
     default = {
       instance_types = [var.node_instance_type]
