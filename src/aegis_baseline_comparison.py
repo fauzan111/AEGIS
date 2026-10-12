@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-AEGIS - comparison against a named state-of-the-art baseline (Gate 2 evidence).
+AEGIS - comparison against a named state-of-the-art baseline (head-to-head baseline evidence).
 
 "State of the art" needs to name one concrete, describable system, not a
 citation range. The classic, widely-used baseline for this kind of behavioural
@@ -35,7 +35,7 @@ from aegis_detect import build_windows  # noqa: E402  (reuse the exact same wind
 # same volumetric/error features the SPC literature typically keys on
 SPC_FEATURES = ["n", "err_rate", "max_resp", "distinct_nf"]
 Z_THRESHOLD_SWEEP = np.arange(1.0, 6.05, 0.25)   # standard deviations
-FPR_TARGET = 0.0143  # AEGIS's own achieved FPR, for a matched comparison
+FPR_TARGET = 0.0144  # AEGIS's own achieved FPR, for a matched comparison
 
 
 def fit_spc_baseline(train_legit):
@@ -146,10 +146,26 @@ def main():
     x = np.arange(len(threats)); w = 0.38
     b.bar(x - w/2, [per_spc.get(t, 0)*100 for t in threats], width=w, color=SPCC, label="SPC baseline")
     b.bar(x + w/2, [per_aegis.get(t, 0)*100 for t in threats], width=w, color=ACC, label="AEGIS")
-    b.set_xticks(x); b.set_xticklabels([t.replace("_", "\n") for t in threats], fontsize=7.5)
-    b.set_ylabel("% detected"); b.set_ylim(0, 105)
+    # short "T1"/"T1v2"/"T4-slow" codes only - two-line full names
+    # ("T1\nimpersonation", "T2\ncompromise", ...) ran wider than the
+    # per-bar spacing at 10 threat variants and visually merged into each
+    # other; full names are already spelled out in the deck's "Seven
+    # Threats We Watch For" slide, so only the variant suffix needs to
+    # survive here to tell the base and hardened forms apart.
+    def short_code(t):
+        code = t.split("_")[0]
+        if t.endswith("_v2"):
+            return code + "v2"
+        if t.endswith("_slow_ramp"):
+            return code + "-slow"
+        return code
+    b.set_xticks(x); b.set_xticklabels([short_code(t) for t in threats], fontsize=8.5)
+    b.set_ylabel("% detected")
+    # headroom above the tallest (100%) bars so the legend has a guaranteed
+    # empty spot instead of sitting on top of T1/T4/T7's bars
+    b.set_ylim(0, 125)
     b.set_title("Per-threat detection, matched FPR", fontsize=11, color=INKC)
-    b.legend(frameon=False, fontsize=8)
+    b.legend(frameon=False, fontsize=8, loc="upper center", ncol=2)
     for sp in ["top", "right"]:
         b.spines[sp].set_visible(False)
 

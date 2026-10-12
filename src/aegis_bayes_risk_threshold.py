@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-AEGIS - Bayes-risk threshold framing (Gate 2 evidence).
+AEGIS - Bayes-risk threshold framing (cost-ratio threshold evidence).
 
 Direct response to the "optimal with respect to WHAT?" critique: Youden's J
 implicitly treats a missed attack and a false alarm as equally costly, which
@@ -163,17 +163,25 @@ def main():
     # plot only finite-threshold points, ascending fpr, for a clean step curve
     order = np.argsort(fpr)
     a.step(R_GRID, opt_thresh, color=ACC, lw=1.8, where="post")
-    a.axhline(STEPUP, color=STEPC, ls="--", lw=1.2, label=f"chosen STEP-UP ({STEPUP})")
-    a.axhline(BLOCK, color=BLOCKC, ls="--", lw=1.2, label=f"chosen BLOCK ({BLOCK})")
+    a.axhline(STEPUP, color=STEPC, ls="--", lw=1.2)
+    a.axhline(BLOCK, color=BLOCKC, ls="--", lw=1.2)
     if range60:
         a.axvspan(range60[0], range60[1], color=STEPC, alpha=0.15)
     if range85:
         a.axvspan(range85[0], range85[1], color=BLOCKC, alpha=0.15)
     a.set_xscale("log")
-    a.set_xlabel("cost ratio r = C(missed attack) / C(false alarm)")
-    a.set_ylabel("Bayes-risk-optimal threshold")
-    a.set_title("Optimal threshold vs. assumed cost ratio", fontsize=11, color=INKC)
-    a.legend(frameon=False, fontsize=8, loc="lower right")
+    a.set_xlabel("cost ratio r = C(missed attack) / C(false alarm)", fontsize=12.5)
+    a.set_ylabel("Bayes-risk-optimal threshold", fontsize=12.5)
+    a.set_title("Optimal threshold vs. assumed cost ratio", fontsize=15, color=INKC)
+    a.tick_params(labelsize=11.5)
+    # direct labels pinned to the right margin at each line's own height
+    # (axes-fraction x, data y) instead of a legend - the step curve's flat
+    # tail sits at y~0 near the lower-right corner, so a "lower right" legend
+    # box used to get the curve drawn straight through its own text
+    a.text(0.98, STEPUP, f"chosen STEP-UP ({STEPUP})", transform=a.get_yaxis_transform(),
+           color=STEPC, fontsize=11, ha="right", va="bottom")
+    a.text(0.98, BLOCK, f"chosen BLOCK ({BLOCK})", transform=a.get_yaxis_transform(),
+           color=BLOCKC, fontsize=11, ha="right", va="bottom")
     for sp in ["top", "right"]:
         a.spines[sp].set_visible(False)
 
@@ -184,9 +192,11 @@ def main():
     b.axvline(STEPUP, color=STEPC, ls=":", lw=1)
     b.axvline(BLOCK, color=BLOCKC, ls=":", lw=1)
     b.set_xlim(0, 1)
-    b.set_xlabel("threshold t"); b.set_ylabel("expected cost r*(1-recall)+FPR")
-    b.set_title("Cost curves at illustrative cost ratios", fontsize=11, color=INKC)
-    b.legend(frameon=False, fontsize=8)
+    b.set_xlabel("threshold t", fontsize=12.5)
+    b.set_ylabel("expected cost r*(1-recall)+FPR", fontsize=12.5)
+    b.set_title("Cost curves at illustrative cost ratios", fontsize=15, color=INKC)
+    b.tick_params(labelsize=11.5)
+    b.legend(frameon=False, fontsize=11)
     for sp in ["top", "right"]:
         b.spines[sp].set_visible(False)
 
@@ -260,7 +270,7 @@ def main():
             "STEP-UP (fewer distinct thresholds achieve very low FPR on an ~11,000-window test "
             "set), so this gap is wider than STEP-UP's - still Pareto-efficient, but the "
             "resolution-scale caveat matters more here, and is a legitimate target for a larger "
-            "held-out set at Gate 3.")
+            "larger held-out set.")
     lines.append("\n## The Neyman-Pearson-achievable frontier for this risk score\n")
     lines.append("| Threshold | Optimal for r in | Recall | FPR |\n|---|---|---|---|")
     for _, row in hull_df.sort_values("r_min").iterrows():
@@ -274,7 +284,7 @@ def main():
     lines.append(
         "\nAs r rises (a missed attack is assumed increasingly costlier than a false alarm), the "
         "optimal threshold moves lower, trading a higher false-positive rate for higher recall - "
-        "the same obstacle-detector tradeoff described in the Gate 2 rehearsal: at the extreme "
+        "the same obstacle-detector tradeoff described in an earlier rehearsal: at the extreme "
         "(r to infinity), the optimal policy degenerates to flagging everything, exactly as "
         "'never move, see obstacles everywhere' is not actually optimal despite maximising "
         "detection. Our chosen operating points sit at a moderate, stated cost ratio, not at "
@@ -283,7 +293,7 @@ def main():
         "**Scope note:** this analysis covers the binary STEP-UP decision boundary (flag vs. "
         "pass). Extending it to the full three-action PASS/STEP-UP/BLOCK policy would need a "
         "richer cost matrix (distinct costs for a missed attack, an unnecessary STEP-UP "
-        "challenge, and an unnecessary BLOCK) - noted here as Gate 3 follow-up rather than "
+        "challenge, and an unnecessary BLOCK) - noted here as follow-up work rather than "
         "assumed away.")
     report = "\n".join(lines) + "\n"
 

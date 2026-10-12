@@ -415,22 +415,44 @@ def make_figure(test, per):
     import matplotlib.pyplot as plt
 
     INKC, LEGITC, ATKC, ACC = "#1F2A37", "#3B82C4", "#D1495B", "#0E9384"
-    fig, ax = plt.subplots(1, 2, figsize=(11, 4.2))
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4.8))
     fig.suptitle("AEGIS - zero-trust gate: detection on synthetic 5G SBA traffic",
-                 fontsize=13, fontweight="bold", color=INKC, x=0.5, y=0.99)
+                 fontsize=15, fontweight="bold", color=INKC, x=0.5, y=0.99)
 
-    # (1) risk distribution: legit vs attack
+    # (1) risk distribution: legit vs attack - outlined (step) histograms so
+    # neither series hides behind the other, with threshold labels pinned
+    # near the top of the axes (never inside the bars) on a readable pill.
     a = ax[0]
     bins = np.linspace(0, 1, 26)
+    ymax = 2 * max(
+        np.histogram(test.loc[test.label == "legit", "risk"], bins=bins)[0].max(),
+        np.histogram(test.loc[test.label == "attack", "risk"], bins=bins)[0].max(),
+    )
     a.hist(test.loc[test.label == "legit", "risk"], bins=bins, color=LEGITC,
-           alpha=0.85, label="legit", log=True)
+           alpha=0.55, label="legit windows", log=True, edgecolor=LEGITC, linewidth=1.2)
     a.hist(test.loc[test.label == "attack", "risk"], bins=bins, color=ATKC,
-           alpha=0.85, label="attack", log=True)
-    a.axvline(STEPUP, color="#6B7280", ls="--", lw=1); a.axvline(BLOCK, color=INKC, ls="--", lw=1)
-    a.text(STEPUP, 1.5, " STEP-UP", fontsize=8, color="#6B7280")
-    a.text(BLOCK, 1.5, " BLOCK", fontsize=8, color=INKC)
-    a.set_title("Risk score - legit vs attack", fontsize=11, color=INKC)
-    a.set_xlabel("risk"); a.set_ylabel("windows (log)"); a.legend(frameon=False, fontsize=9)
+           alpha=0.55, label="attack windows", log=True, edgecolor=ATKC, linewidth=1.2)
+    a.set_ylim(0.8, ymax)
+    a.axvline(STEPUP, color="#6B7280", ls="--", lw=1.6)
+    a.axvline(BLOCK, color=INKC, ls="--", lw=1.6)
+    # the y-axis is log-scaled, so "10% of ymax" in linear terms actually
+    # lands ~78% of the way up the visible axis (log10(ymax*0.1) is only one
+    # decade below log10(ymax)) - that pushed the boxed labels up into the
+    # "upper right" legend. Place them at a fixed 12% up the log-scaled axis
+    # instead, so they stay low regardless of how tall the tallest bar is.
+    log_lo, log_hi = np.log10(0.8), np.log10(ymax)
+    label_y = 10 ** (log_lo + 0.12 * (log_hi - log_lo))
+    a.text(STEPUP - 0.02, label_y, "STEP-UP\n(risk >= 0.60)", fontsize=10.5, color="#6B7280",
+           ha="right", va="center", fontweight="bold",
+           bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#6B7280", lw=1, alpha=0.95))
+    a.text(BLOCK + 0.02, label_y, "BLOCK\n(risk >= 0.85)", fontsize=10.5, color=INKC,
+           ha="left", va="center", fontweight="bold",
+           bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=INKC, lw=1, alpha=0.95))
+    a.set_title("Risk score: legit vs attack windows", fontsize=13, color=INKC, fontweight="bold")
+    a.set_xlabel("risk score (0 = normal, 1 = max anomaly)", fontsize=11)
+    a.set_ylabel("number of windows (log scale)", fontsize=11)
+    a.tick_params(labelsize=10)
+    a.legend(frameon=True, framealpha=0.95, edgecolor="none", fontsize=11, loc="upper right")
     for sp in ["top", "right"]:
         a.spines[sp].set_visible(False)
 
@@ -440,12 +462,13 @@ def make_figure(test, per):
     vals = [per[t][1]*100 for t in names]
     cols = [ACC if v >= 90 else ATKC for v in vals]
     b.barh(range(len(names)), vals, color=cols)
-    b.set_yticks(range(len(names))); b.set_yticklabels([t.replace("_", " ") for t in names], fontsize=9)
+    b.set_yticks(range(len(names))); b.set_yticklabels([t.replace("_", " ") for t in names], fontsize=11)
     b.invert_yaxis(); b.set_xlim(0, 112)
     for i, v in enumerate(vals):
-        b.text(v + 2, i, f"{v:.0f}%", va="center", fontsize=10, fontweight="bold", color=INKC)
-    b.set_title("Detection rate per threat", fontsize=11, color=INKC)
-    b.set_xlabel("% detected")
+        b.text(v + 2, i, f"{v:.0f}%", va="center", fontsize=12, fontweight="bold", color=INKC)
+    b.set_title("Detection rate per threat", fontsize=13, color=INKC, fontweight="bold")
+    b.set_xlabel("% detected", fontsize=11)
+    b.tick_params(labelsize=10)
     for sp in ["top", "right"]:
         b.spines[sp].set_visible(False)
 

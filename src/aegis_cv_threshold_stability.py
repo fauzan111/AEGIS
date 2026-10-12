@@ -10,7 +10,7 @@ Scope: this checks whether the OPERATING-POINT SELECTION itself is stable
 and generalises, by 5-fold cross-validating the test set alone (picking a
 threshold on 4 folds' scores, evaluating on the held-out fold, five times).
 It does NOT refit the Isolation Forest or rule baselines per fold - that
-would revalidate the whole detector, which is a larger Gate 3-scope rebuild.
+would revalidate the whole detector, which is a larger follow-up rebuild.
 This is a narrower, honest claim: "the threshold we'd pick, and the
 performance we'd see, doesn't depend on which slice of the test set we
 happen to be looking at."
@@ -32,7 +32,7 @@ SCORED = os.path.join(REPORTS, "scored_windows.csv")
 OUT_DIR = os.path.join(REPORTS, "GATE-2")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-TARGET_FPR = 0.0143   # the FPR budget the original 0.60 threshold was tuned toward
+TARGET_FPR = 0.0144   # the FPR budget the original 0.60 threshold was tuned toward
 N_FOLDS = 5
 SEED = 11
 
@@ -86,11 +86,15 @@ def main():
     x = cv["fold"].to_numpy()
     b.bar(x - width/2, cv["recall"]*100, width=width, color=ACC, label="held-out recall")
     b.bar(x + width/2, cv["fpr"]*100, width=width, color="#D1495B", label="held-out FPR")
-    b.axhline(90.7, color=ACC, ls=":", lw=1)
-    b.axhline(1.43, color="#D1495B", ls=":", lw=1)
+    b.axhline(91.6, color=ACC, ls=":", lw=1)
+    b.axhline(1.44, color="#D1495B", ls=":", lw=1)
     b.set_xlabel("fold"); b.set_ylabel("%")
     b.set_title("Held-out recall / FPR per fold", fontsize=11, color=INKC)
-    b.set_xticks(x); b.legend(frameon=False, fontsize=8)
+    # fixed headroom above the tallest bar/reference line so the legend has a
+    # guaranteed-empty spot - loc="best" silently picks a spot that collides
+    # with the reference line whenever the bar heights shift slightly
+    b.set_ylim(0, 115)
+    b.set_xticks(x); b.legend(frameon=False, fontsize=8, loc="upper left", ncol=2)
     for sp in ["top", "right"]:
         b.spines[sp].set_visible(False)
 
@@ -110,8 +114,8 @@ def main():
         f"{N_FOLDS-1} folds' scores, then evaluate that threshold on the held-out fold. This checks "
         "whether the threshold-selection process is stable and generalises across different slices "
         "of the data, not whether the underlying Isolation Forest/rules model itself generalises "
-        "(that would need refitting the whole detector per fold - out of scope here, flagged for "
-        "Gate 3).\n")
+        "(that would need refitting the whole detector per fold - out of scope here, flagged as "
+        "future work).\n")
     lines.append("## Result\n")
     lines.append("| Fold | Threshold picked | Held-out recall | Held-out FPR | Attack windows | Legit windows |")
     lines.append("|---|---|---|---|---|---|")
@@ -121,12 +125,12 @@ def main():
     lines.append(f"\n- Threshold across folds: **{t_mean:.3f} +/- {t_std:.3f}** "
                  f"(reported value: 0.60)")
     lines.append(f"- Held-out recall across folds: **{rec_mean*100:.1f}% +/- {rec_std*100:.1f}%** "
-                 f"(reported value: 90.7%)")
+                 f"(reported value: 91.6%)")
     lines.append(f"- Held-out FPR across folds: **{fpr_mean*100:.2f}% +/- {fpr_std*100:.2f}%** "
-                 f"(reported value: 1.43%)")
+                 f"(reported value: 1.44%)")
     lines.append(
         "\nThe fold-to-fold threshold and out-of-fold recall/FPR stay close to the originally "
-        "reported values, with modest spread consistent with the ~350-window attack sample size. "
+        "reported values, with modest spread consistent with the ~420-window attack sample size. "
         "This does not prove the underlying detector would generalise to genuinely new traffic "
         "distributions (that needs real or temporally-held-out data, see the temporal-split check) "
         "- it shows the threshold itself was not cherry-picked to this particular test set.")
