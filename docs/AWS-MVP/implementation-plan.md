@@ -27,7 +27,7 @@ Four open questions are already out to the tutor (account/billing ownership, Bed
 
 **Deploy-time only:** `terraform apply` against the real account — waits on account access, and on setting `eks_public_access_cidrs` to a real IP (checked-in default is a deliberately invalid placeholder, not `0.0.0.0/0`).
 
-## Phase 2 — Lift-and-shift the existing stack into Helm charts (in progress)
+## Phase 2 — Lift-and-shift the existing stack into Helm charts ✅ written 2026-10-12, not yet deployed
 
 Mostly translation work — you already have this running in Docker Compose (`docs/GATE-3/real-traffic-capture.md`).
 
@@ -35,12 +35,13 @@ Mostly translation work — you already have this running in Docker Compose (`do
 - [x] UERANSIM Helm chart: two separate Gradiant charts matching the HLD's two boxes, `ueransim-gnb` v0.2.6 and `ueransim-ues` v0.1.2 (confirmed genuinely different versions, not a typo). PLMN overridden to `mcc=001`/`mnc=01` to match the real captured subscriber traffic, not left at the chart's generic test PLMN. `infra/helm/ueransim/`.
 - [x] Synthetic subscriber K/OP values in a namespaced Kubernetes Secret, never real SIM data (matches the existing privacy-safe pattern already documented in `docs/GATE-3/real-vs-synthetic-dashboard-implications.md`). `infra/k8s/subscriber-secret.yaml`, same IMSI/K/OP already used in the local Docker Compose setup.
 - [x] *(Discovered mid-phase, not in the original Phase 1 writeup)* EBS CSI driver + EKS Pod Identity + `gp3` default StorageClass, since Open5GS's bundled MongoDB needs a PVC to bind and Phase 1 never provisioned this. Namespaces also relabeled to the `privileged` Pod Security Standard, since the UPF and UE pods both need `privileged: true` + `NET_ADMIN` for their TUN devices. See `infra/terraform/README.md`'s "Phase 2 addition" section. Reviewed by `iac-reviewer`, which caught and fixed a real addon-ordering bug.
-- [ ] Dockerfile + Helm chart for the AEGIS gate (wraps `src/aegis_detect.py` + the Streamlit dashboard)
-- [ ] Kubernetes Job manifest for the SBI capture & parse step — pinned to the SCP node, host network, runs `tcpdump` on `:7777` and feeds `src/parse_real_sbi_capture.py` (same logic as the manual runbook, now automated)
+- [x] Dockerfile + Helm chart for the AEGIS gate (wraps `src/aegis_detect.py` + the Streamlit dashboard). `infra/docker/aegis-gate/Dockerfile` (already existed), `infra/helm/aegis-gate/` (Chart.yaml/values.yaml/templates, lints and templates clean against `helm lint`/`helm template`). Still reads its baked-in `data/aegis_traffic.csv`, not S3 — that's the Phase 3 item below, deliberately not pulled forward.
+- [x] Kubernetes Job manifest for the SBI capture & parse step — pinned to the SCP node, host network, runs `tcpdump` on `:7777` and feeds `src/parse_real_sbi_capture.py` (same logic as the manual runbook, now automated). `infra/docker/sbi-capture/` (Dockerfile + entrypoint script) and `infra/k8s/sbi-capture-job.yaml`, validated against the real k8s schema via `kubectl apply --dry-run=client`. One unverified assumption flagged in the manifest itself: the SCP pod-affinity label selector (`app.kubernetes.io/name: open5gs-scp`) follows standard Helm convention but hasn't been confirmed against the actual pulled Gradiant chart the way UPF's `privileged` requirement was — check once the open5gs chart is actually installed.
+- Both reviewed by `iac-reviewer`: no blockers, but it caught real gaps since the `aegis` namespace's `privileged` Pod Security Standard (needed for the capture Job) gives the gate Deployment zero PSS backstop of its own. Fixed: non-root `USER` added to the gate Dockerfile, explicit restrictive `securityContext` (drop all caps, no privilege escalation) on the gate Deployment, `drop: ["ALL"]` added alongside the capture Job's `NET_ADMIN`/`NET_RAW` grant, `required` guards on the three must-set Helm values so a bare `helm install` fails loudly instead of silently deploying a broken pod, `activeDeadlineSeconds` + `ttlSecondsAfterFinished` on the Job (an unschedulable pod from a wrong affinity label would otherwise hang forever instead of failing visibly), and the capture script's `tcpdump ... || true` was swallowing every failure mode — rewritten to only treat timeout (124) or a clean exit (0) as expected, anything else as a real failure.
 
 ## Phase 3 — Data pipeline wiring
 
-- [ ] Capture Job uploads raw pcap + parsed CSV to S3
+- [x] Capture Job uploads raw pcap + parsed CSV to S3 — `capture_and_upload.sh` does both (`s3://<bucket>/raw/*.pcap`, `s3://<bucket>/parsed/*.csv`), landed as part of Phase 2's Job manifest work above rather than waiting for a dedicated Phase 3 pass.
 - [ ] AEGIS gate pod reads the CSV from S3, runs OBSERVE → FINGERPRINT → SCORE → DECIDE (unmodified pipeline — same code path already validated in `src/validate_real_traffic_detection.py`)
 - [ ] AEGIS gate writes scored windows back to S3
 - [ ] End-to-end smoke test: trigger one registration, confirm a row appears scored in S3 within a reasonable time

@@ -1,0 +1,15 @@
+# ClusterIP only - Phase 4 puts an internal ALB (VPC origin) + CloudFront
+# + WAF in front of this; the chart itself has no business creating a
+# public-facing LoadBalancer Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: aegis-gate
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: aegis-gate
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aegis-gate
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: aegis-gate
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aegis-gate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aegis-gate
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: aegis-gate
+          image: "{{ required "image.repository must be set (the ECR repo URL)" .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # the `aegis` namespace is labeled at the `privileged` Pod
+          # Security Standard for the SBI capture Job's sake (see
+          # namespaces.tf) - that's namespace-wide, so this is the only
+          # thing stopping THIS workload from running privileged too
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: AWS_REGION
+              value: {{ .Values.env.awsRegion | quote }}
+            - name: S3_BUCKET
+              value: {{ required "env.s3Bucket must be set (the data_bucket_name Terraform output)" .Values.env.s3Bucket | quote }}
+          # same endpoint the Dockerfile's own HEALTHCHECK polls
+          livenessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

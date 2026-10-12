@@ -1,0 +1,40 @@
+# Our own chart (unlike open5gs/ueransim, there's no third-party chart
+# for this), so all of this is a plain Deployment + Service + a single
+# IRSA-annotated ServiceAccount. See README.md for the install command.
+
+image:
+  # Set at install time to the ECR repo URL from the
+  # `ecr_repository_urls` Terraform output (the "aegis-mvp/aegis-gate"
+  # key) - left empty here on purpose, there's no sane default across
+  # AWS accounts.
+  repository: ""
+  tag: "v1" # IMMUTABLE tags per ecr.tf - never ":latest"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  port: 8501 # matches the Dockerfile's EXPOSE / streamlit --server.port
+
+serviceAccount:
+  name: aegis-gate-sa
+  # Set at install time to the `aegis_gate_irsa_role_arn` Terraform
+  # output. Without this annotation the pod has no AWS credentials at
+  # all - it'll run, but every S3 call fails.
+  roleArn: ""
+
+env:
+  awsRegion: eu-west-1
+  # Set at install time to the `data_bucket_name` Terraform output.
+  # Phase 2 still reads its baked-in data/aegis_traffic.csv (see the
+  # Dockerfile) - this is wired through now so Phase 3's switch to
+  # reading from S3 is a code change, not an infra one.
+  s3Bucket: ""
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi

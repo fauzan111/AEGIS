@@ -1,0 +1,108 @@
+# Automates docs/GATE-3/real-traffic-capture.md's manual tcpdump step as
+# a one-shot Job, per the AWS-MVP plan's Phase 2 checklist item. Fill in
+# the three REPLACE-WITH-* values below from `terraform output` before
+# applying - same pattern as infra/k8s/subscriber-secret.yaml.
+#
+#   ROLE_ARN=$(terraform -chdir=infra/terraform/environments/demo output -raw sbi_capture_irsa_role_arn)
+#   ECR_URL=$(terraform -chdir=infra/terraform/environments/demo output -json ecr_repository_urls | jq -r '."aegis-mvp/sbi-capture"')
+#   BUCKET=$(terraform -chdir=infra/terraform/environments/demo output -raw data_bucket_name)
+#   sed -e "s|REPLACE-WITH-sbi_capture_irsa_role_arn|$ROLE_ARN|" \
+#       -e "s|REPLACE-WITH-sbi-capture-image|$ECR_URL:v1|" \
+#       -e "s|REPLACE-WITH-data_bucket_name|$BUCKET|" \
+#       infra/k8s/sbi-capture-job.yaml | kubectl apply -f -
+#
+# Build and push the image first, same pattern as
+# infra/helm/aegis-gate/README.md:
+#   docker build -f infra/docker/sbi-capture/Dockerfile -t "$ECR_URL:v1" .
+#   docker push "$ECR_URL:v1"
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sbi-capture-sa
+  namespace: aegis
+  annotations:
+    eks.amazonaws.com/role-arn: "REPLACE-WITH-sbi_capture_irsa_role_arn"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sbi-capture
+  namespace: aegis
+spec:
+  # a failed capture (e.g. landed on a node with no SCP traffic that
+  # minute) is worth one retry, not an infinite loop
+  backoffLimit: 2
+  # the podAffinity term below is `required`, not `preferred` - if the
+  # label selector turns out to be wrong (see the "NOT YET VERIFIED"
+  # note) or the SCP pod isn't up, this pod sits Pending forever and
+  # backoffLimit never even triggers, since a pod that never schedules
+  # never "fails". This forces a visible failure instead of a silent hang.
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sbi-capture
+    spec:
+      serviceAccountName: sbi-capture-sa
+      restartPolicy: Never
+      # Accepted trade-off, not an oversight: the BPF filter in
+      # capture_and_upload.sh scopes what gets WRITTEN to the pcap (SBI
+      # traffic only), not what this process can SEE. With hostNetwork +
+      # NET_ADMIN/NET_RAW, it technically has visibility into all traffic
+      # crossing this node's network namespace - kubelet, CNI, any other
+      # host-networked pod, IMDS. Fine for a short-lived demo Job that
+      # runs once and exits; would need more thought if this became a
+      # long-running DaemonSet.
+      hostNetwork: true
+      # still need cluster DNS (S3 endpoint, STS for IRSA) even though
+      # the pod otherwise shares the node's network namespace
+      dnsPolicy: ClusterFirstWithHostNet
+      affinity:
+        podAffinity:
+          # pins this Job onto whichever node is currently running the
+          # open5gs SCP pod - hostNetwork alone only gets you onto SOME
+          # node, this is what makes it the SAME node the SCP traffic
+          # actually crosses.
+          #
+          # NOT YET VERIFIED against the real chart: open5gs/README.md's
+          # author confirmed UPF's privileged requirement by pulling the
+          # actual gradiant/open5gs chart and reading its subchart
+          # values - the label below (app.kubernetes.io/name: open5gs-scp)
+          # is the standard Helm convention, but hasn't been confirmed
+          # the same way yet. Run `kubectl -n open5gs get pod -l
+          # app.kubernetes.io/instance=open5gs -o wide --show-labels`
+          # once the open5gs chart is actually installed and fix this
+          # selector if the real label differs, before relying on it.
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: open5gs-scp
+              namespaces: ["open5gs"]
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: sbi-capture
+          image: "REPLACE-WITH-sbi-capture-image"
+          securityContext:
+            # least-privilege per namespaces.tf's own reasoning for why
+            # the aegis namespace needs the privileged Pod Security
+            # Standard: NET_ADMIN + NET_RAW for tcpdump, not a blanket
+            # `privileged: true`. drop ALL first, or the container keeps
+            # Docker's full default capability set (CHOWN, SETUID, ...)
+            # on top of the two it actually needs.
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+              add: ["NET_ADMIN", "NET_RAW"]
+          env:
+            - name: S3_BUCKET
+              value: "REPLACE-WITH-data_bucket_name"
+            - name: CAPTURE_DURATION
+              value: "60"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
