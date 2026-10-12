@@ -25,7 +25,7 @@ output "sbi_capture_irsa_role_arn" {
   value       = module.sbi_capture_irsa.arn
 }
 
-output "aegis_gate_irsa_role_arn" {
-  description = "Annotate the aegis-gate-sa ServiceAccount in the aegis namespace with eks.amazonaws.com/role-arn = this, when Phase 2 creates it."
-  value       = module.aegis_gate_irsa.arn
+output "aegis_gate_scorer_irsa_role_arn" {
+  description = "Annotate the aegis-gate-scorer-sa ServiceAccount (infra/k8s/aegis-gate-scoring-cronjob.yaml) with eks.amazonaws.com/role-arn = this. NOT the dashboard's aegis-gate-sa - that ServiceAccount has no S3 grant at all, see iam.tf's comment for why."
+  value       = module.aegis_gate_scorer_irsa.arn
 }

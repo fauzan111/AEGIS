@@ -5,7 +5,17 @@
 # Phase 2 is a lift-and-shift of what already runs locally: the baked-in
 # data/aegis_traffic.csv is what the dashboard's live-attack-injection tab
 # fits its baselines against (load_live_pipeline() in aegis_dashboard.py),
-# not just a build artifact. Reading from S3 instead is Phase 3 work.
+# not just a build artifact.
+#
+# Phase 3's S3 read/write path (src/score_real_traffic_from_s3.py) is
+# DELIBERATELY NOT bundled into this image - see
+# infra/docker/aegis-gate-scorer/Dockerfile for that. Reviewed finding: the
+# aegis-gate-sa ServiceAccount already carries a standing S3 read/write IAM
+# grant (infra/terraform/environments/demo/iam.tf); shipping boto3 and the
+# S3-write script in the same image as this public-facing Streamlit app
+# would turn any RCE in the dashboard into an immediately-usable path to
+# that grant. Keeping them as separate images means the public dashboard's
+# attack surface never includes an AWS SDK at all.
 FROM python:3.11-slim
 
 WORKDIR /app

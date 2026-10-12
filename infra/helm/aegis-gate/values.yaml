@@ -1,6 +1,6 @@
 # Our own chart (unlike open5gs/ueransim, there's no third-party chart
-# for this), so all of this is a plain Deployment + Service + a single
-# IRSA-annotated ServiceAccount. See README.md for the install command.
+# for this), so all of this is a plain Deployment + Service + a plain
+# (non-IRSA) ServiceAccount. See README.md for the install command.
 
 image:
   # Set at install time to the ECR repo URL from the
@@ -18,18 +18,18 @@ service:
 
 serviceAccount:
   name: aegis-gate-sa
-  # Set at install time to the `aegis_gate_irsa_role_arn` Terraform
-  # output. Without this annotation the pod has no AWS credentials at
-  # all - it'll run, but every S3 call fails.
-  roleArn: ""
-
-env:
-  awsRegion: eu-west-1
-  # Set at install time to the `data_bucket_name` Terraform output.
-  # Phase 2 still reads its baked-in data/aegis_traffic.csv (see the
-  # Dockerfile) - this is wired through now so Phase 3's switch to
-  # reading from S3 is a code change, not an infra one.
-  s3Bucket: ""
+  # Deliberately NO eks.amazonaws.com/role-arn annotation - this pod is
+  # the public-facing Streamlit dashboard, which doesn't touch S3 at all
+  # (it fits its baselines against the image's baked-in
+  # data/aegis_traffic.csv). The real-traffic S3 scoring path
+  # (src/score_real_traffic_from_s3.py) runs as its own separate image
+  # and ServiceAccount (infra/docker/aegis-gate-scorer/,
+  # infra/k8s/aegis-gate-scoring-cronjob.yaml) specifically so this pod
+  # never holds standing AWS credentials it has no code path to use -
+  # reviewed finding: IRSA grants travel with the ServiceAccount
+  # annotation regardless of what's installed in the image, so an
+  # annotation here would hand any RCE in this public-facing app a
+  # working path to the data bucket even without boto3 present.
 
 resources:
   requests:

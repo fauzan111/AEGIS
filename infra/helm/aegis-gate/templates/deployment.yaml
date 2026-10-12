@@ -32,11 +32,8 @@ spec:
               drop: ["ALL"]
           ports:
             - containerPort: {{ .Values.service.port }}
-          env:
-            - name: AWS_REGION
-              value: {{ .Values.env.awsRegion | quote }}
-            - name: S3_BUCKET
-              value: {{ required "env.s3Bucket must be set (the data_bucket_name Terraform output)" .Values.env.s3Bucket | quote }}
+          # no AWS_REGION/S3_BUCKET env vars - this pod has no AWS
+          # credentials to use them with, see values.yaml
           # same endpoint the Dockerfile's own HEALTHCHECK polls
           livenessProbe:
             httpGet:

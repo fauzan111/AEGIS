@@ -1,0 +1,11 @@
+# Deliberately NOT the same requirements.txt as the public dashboard image
+# (infra/docker/aegis-gate/) - no streamlit, no matplotlib, no python-docx/
+# python-pptx. This image's only job is to run src/score_real_traffic_from_s3.py
+# as a batch Job with no exposed network surface, so it carries only what
+# that script and its aegis_detect.py import actually need. Same pandas/
+# numpy/scikit-learn pins as the dashboard image, so the detection pipeline
+# behaves identically regardless of which image runs it.
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.6.1
+boto3==1.43.112

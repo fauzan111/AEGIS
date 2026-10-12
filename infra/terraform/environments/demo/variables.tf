@@ -35,9 +35,9 @@ variable "node_count" {
 }
 
 variable "ecr_repository_names" {
-  description = "One ECR repo per pinned image the cluster pulls, per the HLD's namespaces: open5gs, ueransim, the AEGIS gate, and the SBI capture/parse job."
+  description = "One ECR repo per pinned image the cluster pulls, per the HLD's namespaces: open5gs, ueransim, the AEGIS gate, the SBI capture/parse job, and the AEGIS gate's S3 scoring CronJob (infra/docker/aegis-gate-scorer/ - a separate, smaller image from the gate's own dashboard image on purpose, see that Dockerfile's comment)."
   type        = list(string)
-  default     = ["aegis-mvp/open5gs", "aegis-mvp/ueransim", "aegis-mvp/aegis-gate", "aegis-mvp/sbi-capture"]
+  default     = ["aegis-mvp/open5gs", "aegis-mvp/ueransim", "aegis-mvp/aegis-gate", "aegis-mvp/sbi-capture", "aegis-mvp/aegis-gate-scorer"]
 }
 
 variable "data_bucket_name" {

@@ -1,0 +1,92 @@
+# Phase 3: "AEGIS gate pod reads the CSV from S3, runs the pipeline,
+# writes scored windows back to S3." Uses its OWN image
+# (infra/docker/aegis-gate-scorer/) AND its own ServiceAccount
+# (aegis-gate-scorer-sa, defined below) - both deliberately separate from
+# the public Streamlit dashboard (infra/helm/aegis-gate/, ServiceAccount
+# aegis-gate-sa). Reviewed finding, now fixed: an IRSA role-arn annotation
+# grants credentials via STS regardless of what's installed in a pod's
+# image, so an earlier revision that only split the image but reused the
+# dashboard's ServiceAccount would still have left the public-facing pod
+# holding standing S3 credentials it has no code path to use. The two
+# workloads now have two separate IAM roles (infra/terraform/environments/
+# demo/iam.tf) and two separate ServiceAccounts - the dashboard's has no
+# AWS grant at all.
+#
+#   ECR_URL=$(terraform -chdir=infra/terraform/environments/demo output -json ecr_repository_urls | jq -r '."aegis-mvp/aegis-gate-scorer"')
+#   BUCKET=$(terraform -chdir=infra/terraform/environments/demo output -raw data_bucket_name)
+#   ROLE_ARN=$(terraform -chdir=infra/terraform/environments/demo output -raw aegis_gate_scorer_irsa_role_arn)
+#   sed -e "s|REPLACE-WITH-aegis-gate-scorer-image|$ECR_URL:v1|" \
+#       -e "s|REPLACE-WITH-data_bucket_name|$BUCKET|" \
+#       -e "s|REPLACE-WITH-aegis_gate_scorer_irsa_role_arn|$ROLE_ARN|" \
+#       infra/k8s/aegis-gate-scoring-cronjob.yaml | kubectl apply -f -
+#
+# Build and push the image first:
+#   docker build -f infra/docker/aegis-gate-scorer/Dockerfile -t "$ECR_URL:v1" .
+#   docker push "$ECR_URL:v1"
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aegis-gate-scorer-sa
+  namespace: aegis
+  annotations:
+    eks.amazonaws.com/role-arn: "REPLACE-WITH-aegis_gate_scorer_irsa_role_arn"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: aegis-gate-scoring
+  namespace: aegis
+spec:
+  # every 5 minutes - frequent enough to pick up a capture Job's output
+  # promptly in a short demo window, without constantly re-scoring when
+  # nothing new has landed (the script's own "no objects" check exits 0
+  # immediately in that case, so an idle tick costs almost nothing).
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 180
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: aegis-gate-scoring
+        spec:
+          serviceAccountName: aegis-gate-scorer-sa
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+          containers:
+            - name: score
+              image: "REPLACE-WITH-aegis-gate-scorer-image"
+              # no command override needed - this image's own ENTRYPOINT
+              # runs the scoring script directly, it has no other purpose
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: S3_BUCKET
+                  value: "REPLACE-WITH-data_bucket_name"
+              # the script itself does everything in-memory (S3 in, pandas/
+              # sklearn, S3 out) with no local file writes, but sklearn's
+              # IsolationForest fit can reach for scratch space via joblib
+              # depending on dataset size - a writable /tmp costs nothing
+              # and avoids finding that out the hard way under
+              # readOnlyRootFilesystem.
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+          volumes:
+            - name: tmp
+              emptyDir: {}

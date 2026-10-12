@@ -1,6 +1,8 @@
 # AEGIS gate — Helm
 
-Our own chart, not a third-party one (unlike open5gs/ueransim) — there's nothing to pull. A plain Deployment + ClusterIP Service + an IRSA-annotated ServiceAccount, wrapping `infra/docker/aegis-gate/Dockerfile`.
+Our own chart, not a third-party one (unlike open5gs/ueransim) — there's nothing to pull. A plain Deployment + ClusterIP Service + a ServiceAccount with no AWS credentials, wrapping `infra/docker/aegis-gate/Dockerfile` (the public-facing Streamlit dashboard).
+
+This pod does not touch S3 and gets no IRSA annotation on purpose — see `values.yaml`'s `serviceAccount` comment. The real-traffic S3 scoring path lives in a separate image and chart-free manifest: `infra/docker/aegis-gate-scorer/` + `infra/k8s/aegis-gate-scoring-cronjob.yaml`.
 
 ## Build and push the image first
 
@@ -16,24 +18,20 @@ docker push "$ECR_URL:v1"
 ## Install
 
 ```bash
-ROLE_ARN=$(terraform -chdir=infra/terraform/environments/demo output -raw aegis_gate_irsa_role_arn)
-BUCKET=$(terraform -chdir=infra/terraform/environments/demo output -raw data_bucket_name)
-
 helm install aegis-gate . \
   --namespace aegis \
-  --set image.repository="$ECR_URL" \
-  --set serviceAccount.roleArn="$ROLE_ARN" \
-  --set env.s3Bucket="$BUCKET"
+  --set image.repository="$ECR_URL"
 ```
 
-## Why the dashboard still works without S3 wired up yet
+## Why the dashboard works without any AWS access
 
 The image bakes in `data/aegis_traffic.csv` and runs `aegis_detect.py` at
 *build* time (see the Dockerfile), so the dashboard's live-attack-injection
-tab has a baseline to score against the moment the pod starts — it doesn't
-block on S3 being readable. `env.s3Bucket` is plumbed through now so
-Phase 3's move to reading/writing S3 directly is a code change in
-`aegis_dashboard.py`/`aegis_detect.py`, not another round of infra work.
+tab has a baseline to score against the moment the pod starts — it never
+needed S3 to begin with. If a future phase adds a dashboard tab that reads
+real scored windows from S3 directly, that's the point to revisit this
+chart's ServiceAccount and add a properly-scoped IRSA grant for it —
+deliberately not pre-provisioned now for a feature that doesn't exist yet.
 
 ## Verify
 
