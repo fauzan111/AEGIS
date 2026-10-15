@@ -1,65 +1,69 @@
 # AEGIS - Zero-Trust Identity for AI Agents on the Network
 
 **5G Academy 2026 - Fastweb + Vodafone - Team 4**
-Topic 2 - Security on Network - Assigned by the Committee on 27 July 2026.
 
-**Live project page:** (https://fauzan111.github.io/AEGIS/#gate1)
+**Live project page:** https://fauzan111.github.io/AEGIS/
 **Live dashboard:** https://aegis5gacademy.streamlit.app/
 
-## The idea in one line
+## What AEGIS is, in plain terms
 
-As AI agents and automations increasingly act on 5G network control services, a valid credential alone can't prove an agent is what it claims to be. AEGIS builds a **behavioural fingerprint** of each legitimate agent and continuously scores every request against it: a **zero-trust gate for machine identities**.
+5G networks are increasingly run by automated programs, not people: orchestration bots, closed-loop automation, AI copilots that call the network's internal services directly. Each of these programs carries a credential, a password or token, to prove it's allowed to be there.
 
-## The problem
+The problem: a credential only proves you *have* the right key. It says nothing about whether the thing holding that key right now is still behaving the way it's supposed to. If a credential gets stolen or a program gets compromised, it keeps walking through every door it's ever been allowed through, forever, because nothing ever checks again after the first login.
 
-Orchestration tools, closed-loop automation, and AI copilots now call 5G Network Functions directly over the network's control-plane APIs (the Service-Based Interface). A stolen token or a compromised automation still passes normal authentication, the credential is valid, but the actor behind it isn't. Classic authentication cannot answer "is this really our agent, behaving the way it always does?" AEGIS answers that question, aligned with NIST SP 800-207 zero-trust principles: never trust, always verify, verify continuously.
+AEGIS is a security layer that watches *behaviour*, not just credentials. It builds a profile of how each automated program normally acts, how often it makes requests, what it asks for, in what order, and continuously compares new activity against that profile. A valid credential being used in an unusual way gets caught, even though the password itself was never wrong.
 
-## Project progress
+One line: **credentials prove what you have, AEGIS verifies how you behave.**
 
-### Gate 1 - Technologies, Planning & Feasibility (complete)
+## How it works
 
-Established the technology approach (behavioural fingerprinting plus rules and ML anomaly detection on the 5G Service-Based Architecture), the project schedule, technical feasibility, and the economic and business case for a zero-trust gate on machine identities.
+Four steps, always running the same way:
 
-Full Gate 1 materials: `slides/GATE-1/` (official deck) and `docs/GATE-1/` (prototype write-up).
+1. **Observe** - every request a program makes gets logged: who, what, when, how.
+2. **Fingerprint** - that turns into a behavioural profile for that program, its normal pace, its normal targets, its normal pattern.
+3. **Score** - new activity is compared live against that profile, using two methods together: a set of fast, explainable rules, and a machine-learning model that learns what "normal" looks like without ever needing an example of an attack.
+4. **Decide** - the combined score becomes one of three outcomes: **Pass** (behaves normally), **Step-up** (something looks slightly off, challenge it with a re-check), or **Block** (looks like a real attack, shut it down and alert the security team).
 
-### Gate 2 - Technical Solution & Architecture (complete)
+<img src="assets/architecture.png" alt="AEGIS system architecture" width="420">
 
-Delivered the full technical solution: a concrete system architecture, a working end-to-end implementation, and a complete numerical performance analysis, benchmarked against a **named, reimplemented state-of-the-art baseline** rather than literature citations.
+## What it catches
 
-- **Architecture:** an OBSERVE to FINGERPRINT to SCORE to DECIDE zero-trust gate, covering all seven modelled threats (identity spoofing, compromised agents, reconnaissance, volumetric abuse, slow exfiltration, sequence anomalies, and scope creep).
+AEGIS is built to catch seven different ways a credential or automated program can be misused: pretending to be a different program, a program that's been quietly compromised and starts drifting from its own normal behaviour, reconnaissance (snooping around parts of the network it shouldn't), a sudden flood of requests, slow and quiet data theft over time, requests happening in the wrong order, and a program reaching into parts of the network it was never meant to touch.
 
-  <img src="assets/architecture.png" alt="AEGIS system architecture" width="420">
+Five of these seven map directly onto attacker techniques named in public industry threat frameworks (MITRE FiGHT, GSMA/ENISA 5G guidance); the other two are AEGIS's own behavioural contributions, stated plainly rather than forced into a fit. Full mapping: `docs/GATE-3/threat-model-external-mapping.md`.
 
-- **Results, on a held-out test set of about 11,365 request windows:** ROC-AUC 0.965, recall 90.7%, false-positive rate 1.4%, with detection rate intentionally uneven across threats (76 to 100 percent) rather than a uniform, implausible 100 percent everywhere, matching how real detection systems perform in the published research.
-- **Benchmarked head-to-head against Statistical Process Control (SPC)**, the classic z-score control-chart baseline, reimplemented and run on the identical train/test split as AEGIS: 0.944 ROC-AUC / 63.4% recall for SPC versus 0.965 / 90.7% for AEGIS, a statistically significant improvement (paired bootstrap, p = 0.015).
-- **A rigorous, checkable threshold justification:** the chosen decision threshold is shown to be Pareto-efficient and within 0.2 points of FPR of the empirical Neyman-Pearson-achievable frontier, consistent with a stated cost ratio, rather than an unqualified "optimal" claim.
-- **A live dashboard:** real-time risk scoring, a Live Attack Injection panel that runs the real detection pipeline live against any of the seven threat scenarios, a Before AEGIS / With AEGIS comparison, an animated network-topology view, a live-replay mode, and an incident inspector that explains why each decision was made in plain language.
-- **Additional statistical evidence** (`reports/GATE-2/`): bootstrap confidence intervals, cross-validated threshold stability, a temporal train/test split robustness check, a concept-drift check, and an adversarial evasion stress test.
+## The results
 
-Full Gate 2 report: `docs/GATE-2/GATE-2.md` (also available as a Word document in `slides/GATE-2/`).
+Tested on a held-out set of real attack simulations the system never saw during training, across 7 different automated-agent profiles and 10 attack variants:
 
-### Gate 3 - Proof of Concept (in progress)
+- **ROC-AUC 0.979** - a measure of how well the system separates real attacks from normal activity, out of a possible 1.0.
+- **91.6% recall** - roughly 92 out of every 100 real attacks get caught.
+- **1.44% false-positive rate** - innocent, normal activity gets wrongly flagged only about 1 in every 100 times.
 
-Closing the detection gaps flagged at Gate 2, extending validation to a real 5G core instead of only synthetic traffic, and widening the threat/agent catalogue to stress-test generalisation - the technical work here is complete; the final demo video and Gate 3 report/deck are still in progress.
+Detection isn't a flat 100% across every threat, and that's deliberate: loud, obvious attacks (a sudden flood of requests, a program reaching somewhere it's never allowed) get caught every time, because those are near-certain signals. Quieter, subtler attacks (slow data theft, reconnaissance) are genuinely harder and sit lower, which matches how real-world security systems behave, not an inflated number that would look suspicious to anyone who's worked with real security data.
 
-- **Hardened the two weakest threats.** Added a per-target-ID cardinality feature (rolling distinct-subscriber-ID tracking, both a new rule and a new ML feature) since the in-scope endpoint universe alone was too small to separate legitimate diversity from actual reconnaissance. Recon detection 80% -> 95%, exfiltration 76% -> 80%, bootstrap-validated.
-- **Validated against a real 5G core, not just synthetic traffic.** Stood up an actual Open5GS 5G SA core plus a UERANSIM UE (kept as separate infrastructure, not vendored into this repo), got a genuine registration and PDU session established, and captured real HTTP/2 SBI signalling. Confirmed the synthetic generator's endpoint-naming convention matches real captured 3GPP service calls almost exactly, then went further: ran real attack-like traffic through AEGIS's actual, unmodified detection code and confirmed it correctly flags real behaviour, not just synthetic behaviour. Full runbook and results: `docs/GATE-3/real-traffic-capture.md`.
-- **Widened the agent and attack catalogue** from 5 agents/7 threats to 7 agents/10 threat variants, including two deliberately extreme agent profiles (one with legitimate access to every Network Function, one restricted to a single NF) and three harder attack variants. Found and fixed a real bug along the way: one new attack variant scored 0% detected, not because the behaviour was undetectable but because of how the attack's timing diluted it into a busy agent's own concurrent legitimate traffic - fixing the attack's construction (not the detector) took it to 100%.
-- **Grounded the NF endpoint catalogue in real 3GPP specifications** (TS 29.518, 29.502, 29.510, 29.507/512/514, 29.503, 29.522), widening each Network Function's modelled surface from 2-3 endpoints to a more representative slice of what it actually exposes.
-- **Mapped the seven threats against MITRE FiGHT and GSMA/ENISA's public 5G security guidance**, with verified citations. Five of seven threats match named, externally recognised attacker techniques; two have no match in either framework, stated plainly as AEGIS's own behavioural contributions rather than forced into a fit. Full mapping: `docs/GATE-3/threat-model-external-mapping.md`.
+We also benchmarked against **Statistical Process Control (SPC)**, the classic, already-used-in-industry method for this kind of monitoring, reimplemented ourselves and run on the exact same data: SPC gets 0.929 ROC-AUC and 64.0% recall, AEGIS gets 0.979 and 91.6%. We checked that gap isn't just luck (statistically significant, not a fluke), and cross-validated the decision threshold across 5 different data splits to confirm it wasn't cherry-picked to one lucky test set.
 
-Full-catalogue results after all of the above: ROC-AUC 0.979, recall 91.6%, false-positive rate 1.44% (within the ~1.5% design budget), across 7 agents and 10 attack variants.
+Further statistical evidence - bootstrap confidence intervals, cross-validated threshold stability, a concept-drift check, and an adversarial stress test - is in `reports/GATE-2/`.
 
-Still to come: the final demo video and the Gate 3 report/deck.
+## Validated on a real 5G core, not just our own simulator
+
+Everything above was measured on synthetic traffic we generated ourselves, which is honest but could, in theory, just mean the detector is good at scoring its own generator. To check that wasn't the case, we stood up a real Open5GS 5G core plus a real UERANSIM device, captured genuine signalling traffic off the wire, and ran AEGIS's own, unmodified detection code against it.
+
+Two things it confirmed: our synthetic traffic's format matches real captured network traffic almost exactly, and the detector itself correctly flagged a real attack pattern on real traffic it had never seen before. Full runbook and results: `docs/GATE-3/real-traffic-capture.md`.
+
+## See it live
+
+The [live dashboard](https://aegis5gacademy.streamlit.app/) runs the real detection pipeline in real time: pick one of the seven attack types, launch it, and watch the system score it, explain in plain language why it flagged what it flagged, and sort it into pass, step-up, or block, live.
 
 ## Team
 
-Fauzan Ejaz (Captain), Llagami Tedi
+Fauzan Ejaz (Captain) - Adithya Zacharia Valavi - Ghazanfar Anees Siddiqui - Llagami Tedi
 
-## Where to find things
+## Project structure
 
-- `docs/GATE-1/`, `docs/GATE-2/`, `docs/GATE-3/` - Gate reports, presentation scripts, threat model, architecture documentation, the real-traffic-capture runbook, and the FiGHT/GSMA threat-model mapping
-- `slides/GATE-1/`, `slides/GATE-2/` - Gate presentation decks and official report submissions
-- `reports/`, `reports/GATE-1/`, `reports/GATE-2/`, `reports/GATE-3/` - evaluation charts, metrics, the architecture diagram, the Gate 2 statistical evidence suite, and the real-traffic capture results
-- `src/` - source code for the traffic generator, detector, dashboard, and the real-traffic capture/validation scripts
+- `docs/` - written reports, threat model and architecture documentation, the real-traffic-capture runbook
+- `slides/` - presentation decks and official report submissions
+- `reports/` - evaluation charts, metrics, the architecture diagram, and the statistical evidence suite
+- `src/` - source code for the traffic generator, the detector, the dashboard, and the real-traffic capture/validation scripts
 - `data/` - the synthetic dataset used for evaluation
