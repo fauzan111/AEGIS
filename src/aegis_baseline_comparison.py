@@ -112,13 +112,27 @@ def main():
     fpr_arr, tpr_arr, thresh_arr = roc_curve(y, test["spc_z"].to_numpy())
     idx = max(np.searchsorted(fpr_arr, FPR_TARGET, side="right") - 1, 0)
     spc_thresh = thresh_arr[idx]
-    per_spc = {}
+    per_spc_raw = {}
     for t, g in test[test.label == "attack"].groupby("attack_type"):
-        per_spc[t] = float((g["spc_z"] >= spc_thresh).mean())
-    per_aegis = {}
+        per_spc_raw[t] = (len(g), float((g["spc_z"] >= spc_thresh).mean()))
+    per_aegis_raw = {}
     STEPUP = 0.60
     for t, g in scored[scored.label == "attack"].groupby("attack_type"):
-        per_aegis[t] = float((g["risk"] >= STEPUP).mean())
+        per_aegis_raw[t] = (len(g), float((g["risk"] >= STEPUP).mean()))
+
+    # collapse hardened/variant forms (e.g. T1_impersonation_v2,
+    # T4_volumetric_slow_ramp) into their 7 base threats (T1-T7), weighted by
+    # window count, rather than plotting each variant as its own bar
+    def collapse(raw):
+        agg = {}
+        for t, (nwin, det) in raw.items():
+            base = t.split("_")[0]
+            n0, hit0 = agg.get(base, (0, 0.0))
+            agg[base] = (n0 + nwin, hit0 + det * nwin)
+        return {base: (hit / nwin if nwin else 0.0) for base, (nwin, hit) in agg.items()}
+
+    per_spc = collapse(per_spc_raw)
+    per_aegis = collapse(per_aegis_raw)
 
     # ---------------- figure ----------------
     import matplotlib
@@ -146,20 +160,7 @@ def main():
     x = np.arange(len(threats)); w = 0.38
     b.bar(x - w/2, [per_spc.get(t, 0)*100 for t in threats], width=w, color=SPCC, label="SPC baseline")
     b.bar(x + w/2, [per_aegis.get(t, 0)*100 for t in threats], width=w, color=ACC, label="AEGIS")
-    # short "T1"/"T1v2"/"T4-slow" codes only - two-line full names
-    # ("T1\nimpersonation", "T2\ncompromise", ...) ran wider than the
-    # per-bar spacing at 10 threat variants and visually merged into each
-    # other; full names are already spelled out in the deck's "Seven
-    # Threats We Watch For" slide, so only the variant suffix needs to
-    # survive here to tell the base and hardened forms apart.
-    def short_code(t):
-        code = t.split("_")[0]
-        if t.endswith("_v2"):
-            return code + "v2"
-        if t.endswith("_slow_ramp"):
-            return code + "-slow"
-        return code
-    b.set_xticks(x); b.set_xticklabels([short_code(t) for t in threats], fontsize=8.5)
+    b.set_xticks(x); b.set_xticklabels(threats, fontsize=9)
     b.set_ylabel("% detected")
     # headroom above the tallest (100%) bars so the legend has a guaranteed
     # empty spot instead of sitting on top of T1/T4/T7's bars

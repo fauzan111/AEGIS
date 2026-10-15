@@ -456,10 +456,19 @@ def make_figure(test, per):
     for sp in ["top", "right"]:
         a.spines[sp].set_visible(False)
 
-    # (2) per-threat detection
+    # (2) per-threat detection - collapsed to the 7 base threats (T1-T7),
+    # weighted across hardened/variant forms (e.g. T1_impersonation_v2,
+    # T4_volumetric_slow_ramp) rather than plotting each variant as its own bar
+    agg = {}
+    for t, (nwin, det) in per.items():
+        base = t.split("_")[0]
+        n0, hit0 = agg.get(base, (0, 0.0))
+        agg[base] = (n0 + nwin, hit0 + det * nwin)
+    per_base = {base: (nwin, hit / nwin if nwin else 0.0) for base, (nwin, hit) in agg.items()}
+
     b = ax[1]
-    names = sorted(per)
-    vals = [per[t][1]*100 for t in names]
+    names = sorted(per_base, key=lambda t: int(t[1:]))
+    vals = [per_base[t][1]*100 for t in names]
     cols = [ACC if v >= 90 else ATKC for v in vals]
     b.barh(range(len(names)), vals, color=cols)
     b.set_yticks(range(len(names))); b.set_yticklabels([t.replace("_", " ") for t in names], fontsize=11)
