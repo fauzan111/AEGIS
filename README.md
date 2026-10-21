@@ -58,7 +58,7 @@ The [live dashboard](https://aegis5gacademy.streamlit.app/) runs the real detect
 
 ## Team
 
-Fauzan Ejaz (Captain) - Adithya Zacharia Valavi - Ghazanfar Anees Siddiqui - Llagami Tedi
+Fauzan Ejaz (Captain) - Llagami Tedi
 
 ## Project structure
 
