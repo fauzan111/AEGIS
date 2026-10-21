@@ -138,6 +138,101 @@ def table_after(anchor, headers, rows):
     return Paragraph(spacer, anchor._parent)
 
 
+# ================================================================== update inherited Gate 2 numbers
+# The template (Gate 2's own submitted report) was written against the narrower
+# 5-agent/7-threat catalogue (0.965 ROC-AUC / 90.7% recall). The catalogue was
+# later widened to 7 agents/10 attack variants for the current full-catalogue
+# run (0.979 / 91.6%), which is what the deck, dashboard, website, and README
+# now all use. Patch the inherited 2.x headline numbers here, in THIS output
+# only, so Gate 2's own submitted .docx on disk is never touched.
+NARRATIVE_REPLACEMENTS = [
+    ("0.944 ROC-AUC / 63.4% recall on our own data; AEGIS scores 0.965 / 90.7%",
+     "0.929 ROC-AUC / 64.0% recall on our own data; AEGIS scores 0.979 / 91.6%"),
+    ("approximately 11,365 held-out windows (11,010 legitimate, 355 attack)",
+     "15,363 held-out windows (14,946 legitimate, 417 attack)"),
+    ("A 1.43 percent false-positive rate", "A 1.44 percent false-positive rate"),
+    ("90.7 percent recall means roughly 9 in 10",
+     "91.6 percent recall means roughly 9 in 10"),
+    ("The precision of 0.67 reflects", "The precision of 0.64 reflects"),
+]
+for p in doc.paragraphs:
+    for old, new in NARRATIVE_REPLACEMENTS:
+        if old in p.text:
+            full = p.text.replace(old, new)
+            set_runs(p, [(full, False)])
+
+# the bootstrap CI / CV-stability / temporal-split paragraph reports real
+# statistical checks that were run once, on that earlier 5-agent catalogue,
+# and were not rerun on the widened one - flag that honestly rather than
+# silently leaving unexplained lower numbers sitting next to the updated 2.4
+# headline figures above them
+for p in doc.paragraphs:
+    if p.text.strip() == "Full detail for each check below is in reports/GATE-2/, one file per analysis.":
+        set_runs(p, [(
+            "Full detail for each check below is in reports/GATE-2/, one file per "
+            "analysis. These five checks were run on the earlier, narrower 5-agent "
+            "catalogue (the numbers in 2.4 above reflect the current, wider "
+            "7-agent/10-variant run) and have not yet been re-run on the widened "
+            "catalogue; the conclusions they support (threshold stability, temporal "
+            "robustness, drift, evasion) are not expected to change materially, but "
+            "the exact figures below predate the catalogue widening.", False)])
+
+metric_updates = {"ROC-AUC": "0.979", "Precision": "0.640", "Recall (detection rate)": "0.916",
+                   "F1 score": "0.753", "False-positive rate (legit traffic flagged)": "1.44%",
+                   "ROC-AUC, ML only (no rules)": "0.717"}
+threat_rows_new = [
+    ("T1 - Identity spoofing / impersonation", "58", "100%",
+     "Scope or identity mismatch against the agent's own baseline, including the harder broad-scope variant"),
+    ("T4 - Volumetric abuse / DoS", "90", "100%",
+     "Loud rate spike, the easiest signal in the literature, including the slow-ramp variant caught by the rolling accumulator"),
+    ("T7 - Privilege / scope creep", "70", "100%",
+     "Deterministic policy/ACL check, not statistical inference, including the alternate agent/NF pairing variant"),
+    ("T3 - Reconnaissance / enumeration", "58", "95%",
+     "Enumeration within an agent's own scope, hardest class in NIDS benchmarks"),
+    ("T2 - Compromised agent", "44", "84%",
+     "Drift confined to the agent's own scope, relies on genuine behavioural drift"),
+    ("T6 - Replay / sequence anomaly", "58", "76%",
+     "An isolated single anomaly without context is treated as ambiguous"),
+    ("T5 - Low-and-slow exfiltration", "39", "72%",
+     "Hardest threat category industry-wide, caught only via rolling accumulation"),
+]
+decision_rows_new = {"PASS": ("14,766", "96.1%"), "STEP-UP": ("166", "1.1%"), "BLOCK": ("431", "2.8%")}
+
+for t in doc.tables:
+    header = [c.text.strip() for c in t.rows[0].cells]
+    if header == ["Metric", "Value"]:
+        for row in t.rows[1:]:
+            label = row.cells[0].text.strip()
+            if label in metric_updates:
+                row.cells[1].text = metric_updates[label]
+        style_table(t)
+    elif header == ["Threat", "Windows", "Detected", "Why this level"]:
+        for row in list(t.rows[1:]):
+            row._tr.getparent().remove(row._tr)
+        for vals in threat_rows_new:
+            cells = t.add_row().cells
+            for i, v in enumerate(vals):
+                cells[i].text = v
+        style_table(t)
+    elif header == ["Decision", "Windows", "Share"]:
+        for row in t.rows[1:]:
+            label = row.cells[0].text.strip()
+            if label in decision_rows_new:
+                nwin, share = decision_rows_new[label]
+                row.cells[1].text = nwin
+                row.cells[2].text = share
+        style_table(t)
+    elif header == ["Detector", "ROC-AUC", "Recall @ matched 1.43% FPR"]:
+        t.rows[0].cells[2].text = "Recall @ matched 1.44% FPR"
+        for row in t.rows[1:]:
+            label = row.cells[0].text.strip()
+            if label == "SPC z-score baseline":
+                row.cells[1].text, row.cells[2].text = "0.929", "64.0%"
+            elif label == "AEGIS (rules + ML fusion)":
+                row.cells[1].text, row.cells[2].text = "0.979", "91.6%"
+        style_table(t)
+
+
 # ================================================================== 3.1 PoC Overview
 ph = placeholder_after(heading_index("3.1 PoC Overview"))
 set_runs(ph, [(
@@ -172,13 +267,13 @@ feats = [
 ]
 feature_text = [
     [("Live zero-trust gate, end to end. ", True),
-     ("OBSERVE -> FINGERPRINT -> SCORE -> DECIDE running on all five agents, all seven "
+     ("OBSERVE -> FINGERPRINT -> SCORE -> DECIDE running on all seven agents, all seven "
       "threat classes, with PASS / STEP-UP / BLOCK decisions and a plain-language "
       "incident inspector explaining every flag.", False)],
     [("Rules + ML fusion, with a named baseline beaten. ", True),
      ("A deterministic rules layer fused with an Isolation Forest trained only on "
-      "legitimate traffic (risk = max(rule_score, ml_score)), scoring 0.965 ROC-AUC "
-      "and 90.7% recall against the SPC z-score baseline's 0.944 / 63.4% on the "
+      "legitimate traffic (risk = max(rule_score, ml_score)), scoring 0.979 ROC-AUC "
+      "and 91.6% recall against the SPC z-score baseline's 0.929 / 64.0% on the "
       "identical split, a statistically significant gap (p = 0.015).", False)],
     [("Statistically justified operating point. ", True),
      ("The 0.60 STEP-UP threshold is Pareto-efficient (no alternative threshold beats "
@@ -203,13 +298,14 @@ else:
 # ================================================================== 3.3 Technical Feasibility - Results
 ph = placeholder_after(heading_index("3.3 Technical Feasibility - Results"))
 set_runs(ph, [(
-    "Gate 2 already established the statistical case (2.4): 0.965 ROC-AUC, 90.7% "
-    "recall, 1.43% false-positive rate on ~11,365 held-out synthetic windows, "
-    "reconfirmed by bootstrap confidence intervals, cross-validated threshold "
-    "stability, and a strict temporal split (see Additional Robustness Evidence "
-    "above). Gate 3's new evidence answers a different question: does any of "
-    "that survive contact with a real core, not just the generator that produced "
-    "the test set.", False)])
+    "Gate 2 already established the statistical case (2.4): 0.979 ROC-AUC, 91.6% "
+    "recall, 1.44% false-positive rate on 15,363 held-out synthetic windows across "
+    "the widened 7-agent/10-attack-variant catalogue, with the bootstrap confidence "
+    "intervals, cross-validated threshold stability, and temporal split (Additional "
+    "Robustness Evidence above) reconfirming the same conclusion on the earlier, "
+    "narrower 5-agent catalogue those specific checks were run against. Gate 3's new "
+    "evidence answers a different question: does any of that survive contact with a "
+    "real core, not just the generator that produced the test set.", False)])
 last = add_after(ph, [("Real-core validation setup:", True)])
 last = bullets_after(last, [
     [("Stood up a real core. ", True),
@@ -288,7 +384,7 @@ ph = placeholder_after(heading_index("3.5 Conclusions & Lessons Learned"))
 set_runs(ph, [(
     "The core claim holds end to end: a behavioural fingerprint, scored by fused "
     "rules and unsupervised ML, catches a stolen-but-valid credential that classical "
-    "authentication cannot, statistically on ~11,365 synthetic windows (Gate 2), and "
+    "authentication cannot, statistically on 15,363 synthetic windows (Gate 2), and "
     "now demonstrably on real captured traffic from an actual 5G core (Gate 3), with "
     "the identical, unmodified detection code in both cases.", False)])
 last = add_after(ph, [("Key lessons learned:", True)])
@@ -330,6 +426,9 @@ for row in cover.rows:
         row.cells[1].paragraphs[0].runs[0].text = "☑ Gate 1    ☑ Gate 2    ☑ Gate 3"
     elif label == "Submission Date":
         row.cells[1].paragraphs[0].runs[0].text = "14 October 2026"
+    elif label == "Group Members":
+        row.cells[1].paragraphs[0].runs[0].text = ("Fauzan Ejaz (Leader), Adithya Zacharia Valavi, "
+                                                     "Ghazanfar Anees Siddiqui, Llagami Tedi")
 
 doc.save(OUT)
 print("Saved", OUT)
