@@ -427,8 +427,7 @@ for row in cover.rows:
     elif label == "Submission Date":
         row.cells[1].paragraphs[0].runs[0].text = "14 October 2026"
     elif label == "Group Members":
-        row.cells[1].paragraphs[0].runs[0].text = ("Fauzan Ejaz (Leader), Adithya Zacharia Valavi, "
-                                                     "Ghazanfar Anees Siddiqui, Llagami Tedi")
+        row.cells[1].paragraphs[0].runs[0].text = "Fauzan Ejaz (Leader), Llagami Tedi"
 
 doc.save(OUT)
 print("Saved", OUT)
