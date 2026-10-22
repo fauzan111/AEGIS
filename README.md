@@ -2,7 +2,7 @@
 
 **5G Academy 2026 - Fastweb + Vodafone - Team 4**
 
-**Live project page:** https://fauzan111.github.io/AEGIS/
+**Live project page:** https://fauzan111.github.io/AEGIS/#gate1
 **Live dashboard:** https://aegis5gacademy.streamlit.app/
 
 ## What AEGIS is, in plain terms
